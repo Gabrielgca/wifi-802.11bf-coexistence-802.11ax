@@ -1,93 +1,56 @@
-# Coexistence of 802.11bf and 802.11ax
+# Coexistence of 802.11bf and 802.11ax #
+## Introduction
+
+  This repository contains an ns-3 implementation and module extension of IEEE 802.11bf Wi-Fi Sensing version ns-3.40. As the standard IEEE 802.11bf is currently developing, this repository provides an ns-3 implementation to simulate and evaluate the sensing functionality in Wi-Fi technology based on the draft detailed in [this paper](https://ieeexplore.ieee.org/document/10467185)[^1]. Detailed information and description about the implementation and some theoretical background can be found in [this publication](https://publications.rwth-aachen.de/record/998149).
+
+[^1]: T. Ropitault et al., "IEEE 802.11bf WLAN Sensing Procedure: Enabling the Widespread Adoption of WiFi Sensing," in IEEE Communications Standards Magazine, vol. 8, no. 1, pp. 58-64, March 2024, doi: 10.1109/MCOMSTD.0004.2200062.
+keywords: {Location awareness;Sensors;Object recognition;Task analysis;Wireless fidelity;IEEE 802.11 Standard;Communication standards;Motion detection;Human activity recognition;Wireless LAN;Client-server systems}
+
+## Main Features
+The implementation of Wi-Fi sensing in sub-7 GHz currently only supports the TB sensing measurement instance. Complete implementation is still ongoing while waiting for the final draft of IEEE 802.11bf. The main features of the current implementation are as follows:
+- Facilitates simulation of Wi-Fi sensing and extracts some performance parameters (e.g., sensing latency)
+- Facilitates the coexistence simulation with other Wi-Fi legacy protocols
+
+To demonstrate the implementation please refers to this [file](/examples/wireless/wifi-bf-network.cc). This simulation code includes the setup of the network using IEEE 802.11bf standard and several scenarios to evaluate its performance and capabilities. The output from the simulation code is mainly one of the sensing KPIs, i.e. sensing latency. The following parameters are configurable for the simulation: 
+
+| Name | Description |
+| --- | --- |
+| Network Structure | Number of AP and stations |
+| Network layout | simple and 3GPP indoor office layout | 
+| Sensing Parameters | frequency, bandwidth, CFP , instance number, sensing transmission types, sensing priorities |
+
+## Keywords 
+- WiFi Sensing, MU-OFDMA, PCF, Channel Sounding, ns3
+
+## Usage example 
+There is a [shell script](/output_run_info.sh) defined by the author to automate the output of the simulation code. Please refer to this file for understanding how to efficiently run the simulation. These are few tips for running the program:
+- Build the ns3: ./output_run_info.sh build (type: debug, optimized)
+  - example: ./output_run_info.sh build optimized
+- Fast run: ./output_run_info.sh investigate (logging type: no_log, log_info, log_function) ("parameter") (logging file name)
+  - example: ./output_run_info.sh investigate no_log "--nBss=2" twoBss
+- Scenario run: ./output_run_info.sh (scenario name)
+  - example: ./output_run_info.sh investigate multipleBssBf
+
+! Remeber to change the save location in shell script. You may also need to follow some directory defined in the script
+
+## References
+If you use this module in your research, please cite following:
+<details>
+<summary>Bibtex</summary>
 
 
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+```bibtex8
 
 ```
-cd existing_repo
-git remote add origin https://git.rwth-aachen.de/navid.keshtiarast/coexistence-of-802.11bf-and-802.11ax.git
-git branch -M main
-git push -uf origin main
-```
 
-## Integrate with your tools
 
-- [ ] [Set up project integrations](https://git.rwth-aachen.de/navid.keshtiarast/coexistence-of-802.11bf-and-802.11ax/-/settings/integrations)
+</details>
 
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+## Future Work
+The author of this repository is actively extending the implementation and developing new features for the upcoming IEEE 802.11bf standards. The update can be found [in](https://github.com/idolumbantobing/IEEE_802.11bf). Several agendas are as follows:
+- Extending the implementation of Wi-Fi sensing based on the draft
+- Following upcoming features in the ns-3 and maintaining the implementation version
+- Incorporating machine learning to Wi-Fi MAC for Wi-Fi sensing adaptability
 
 ## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+This software is licensed under the terms of the GNU GPLv2, as like as ns-3. See the [LICENSE](/LICENSE) file for more details.
