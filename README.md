@@ -1,10 +1,8 @@
 # Coexistence of 802.11bf and 802.11ax #
 ## Introduction
 
-  This repository contains an ns-3 implementation and module extension of IEEE 802.11bf Wi-Fi Sensing version ns-3.40. As the standard IEEE 802.11bf is currently developing, this repository provides an ns-3 implementation to simulate and evaluate the sensing functionality in Wi-Fi technology based on the draft detailed in [this paper](https://ieeexplore.ieee.org/document/10467185)[^1]. Detailed information and description about the implementation and some theoretical background can be found in [this publication](https://publications.rwth-aachen.de/record/998149).
+  This repository contains an ns-3 implementation and module extension of IEEE 802.11bf Wi-Fi Sensing version ns-3.40. As the standard IEEE 802.11bf is currently developing, this repository provides an ns-3 implementation to simulate and evaluate the sensing functionality in Wi-Fi technology based on the draft.
 
-[^1]: T. Ropitault et al., "IEEE 802.11bf WLAN Sensing Procedure: Enabling the Widespread Adoption of WiFi Sensing," in IEEE Communications Standards Magazine, vol. 8, no. 1, pp. 58-64, March 2024, doi: 10.1109/MCOMSTD.0004.2200062.
-keywords: {Location awareness;Sensors;Object recognition;Task analysis;Wireless fidelity;IEEE 802.11 Standard;Communication standards;Motion detection;Human activity recognition;Wireless LAN;Client-server systems}
 
 ## Main Features
 The implementation of Wi-Fi sensing in sub-7 GHz currently only supports the TB sensing measurement instance. Complete implementation is still ongoing while waiting for the final draft of IEEE 802.11bf. The main features of the current implementation are as follows:
@@ -45,12 +43,6 @@ If you use this module in your research, please cite following:
 
 
 </details>
-
-## Future Work
-The author of this repository is actively extending the implementation and developing new features for the upcoming IEEE 802.11bf standards. The update can be found [in](https://github.com/idolumbantobing/IEEE_802.11bf). Several agendas are as follows:
-- Extending the implementation of Wi-Fi sensing based on the draft
-- Following upcoming features in the ns-3 and maintaining the implementation version
-- Incorporating machine learning to Wi-Fi MAC for Wi-Fi sensing adaptability
 
 ## License
 This software is licensed under the terms of the GNU GPLv2, as like as ns-3. See the [LICENSE](/LICENSE) file for more details.
