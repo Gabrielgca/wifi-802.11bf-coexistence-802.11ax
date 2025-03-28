@@ -37,7 +37,15 @@ If you use this module in your research, please cite following:
 <summary>Bibtex</summary>
 
 
-```bibtex8
+```@misc{keshtiarast2025nextgensensingmeetslegacy,
+      title={When Next-Gen Sensing Meets Legacy Wi-Fi: Performance Analyses of IEEE 802.11bf and IEEE 802.11ax Coexistence}, 
+      author={Navid Keshtiarast and Pradyumna Kumar Bishoyi and Ido Manuel Lumbantobing and Marina Petrova},
+      year={2025},
+      eprint={2503.04637},
+      archivePrefix={arXiv},
+      primaryClass={cs.NI},
+      url={https://arxiv.org/abs/2503.04637}, 
+}
 
 ```
 
