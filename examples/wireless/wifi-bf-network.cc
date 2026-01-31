@@ -99,6 +99,16 @@ uint64_t m_countCTStoSelf;
 uint64_t m_csiBeamformingReport;
 uint32_t nStations;
 uint32_t nStations_net2;
+
+enum ScenarioType
+{
+    CIRCULAR_PLACEMENT = 1,
+    PREDEFINED_LOCATIONS = 2,
+    INDOOR_OFFICE_ENVIRONMENT = 3,
+    RANDOM_PLACEMENT = 4,
+    INDOOR_OFFICE_3GPP = 5
+};
+
 Time m_sumDelay;
 Time m_avgDelay;
 Time m_sumTrueLatency;
@@ -342,7 +352,8 @@ setLocationScenario(int scenario,
                     std::vector<Bss> allBss,
                     double radius)
 {
-    if (scenario == 1)
+    // Scenario 1: Circular placement of BSSs and STAs
+    if (scenario == ScenarioType::CIRCULAR_PLACEMENT)
     {
         double x_baseAp = 0.0;
         double y_baseAp = 0.0;
@@ -393,7 +404,8 @@ setLocationScenario(int scenario,
             }
         }
     }
-    else if (scenario == 2)
+    // Scenario 2: Pre-defined locations from text files
+    else if (scenario == ScenarioType::PREDEFINED_LOCATIONS)
     {
         if ((nBfBss * (1 + nStations) + nAxBss * (1 + nStations_net2)) == 40)
         {
@@ -465,7 +477,8 @@ setLocationScenario(int scenario,
             positionAlloc->Add(Vector(STA_pos[i][0], STA_pos[i][1], STA_pos[i][2]));
         }
     }
-    else if (scenario == 3)
+    // Scenario 3: Pre-defined locations for indoor office environment
+    else if (scenario == ScenarioType::INDOOR_OFFICE_ENVIRONMENT)
     {
         if (!residentialDensity)
         {
@@ -554,7 +567,8 @@ setLocationScenario(int scenario,
             return positionAlloc;
         }
     }
-    else if (scenario == 4)
+    // Scenario 4: Random placement of BSSs and STAs within a defined area
+    else if (scenario == ScenarioType::RANDOM_PLACEMENT)
     {
         double areaSize = 10.0;
         double x_baseAp = 0.0;
@@ -609,7 +623,8 @@ setLocationScenario(int scenario,
             }
         }
     }
-    else if (scenario == 5)
+    // Scenario 5: Indoor office placement based on 3GPP model
+    else if (scenario == ScenarioType::INDOOR_OFFICE_3GPP)
     {
         double areaSize = 5.0;
         // The lower row
@@ -685,7 +700,7 @@ setLocationScenario(int scenario,
 std::vector<Bss>
 setNumberDevice(int scenario)
 {
-    if (scenario == 1 || scenario == 4)
+    if (scenario == ScenarioType::CIRCULAR_PLACEMENT || scenario == ScenarioType::RANDOM_PLACEMENT)
     {
         if (nBss == 1 && nAxBss == 0)
         {
@@ -778,7 +793,7 @@ setNumberDevice(int scenario)
 
         return allBss;
     }
-    else if (scenario == 2)
+    else if (scenario == ScenarioType::PREDEFINED_LOCATIONS)
     {
         nBss = 40;
         nBfBss = 2;
@@ -851,7 +866,7 @@ setNumberDevice(int scenario)
         }
         return allBss_sce2;
     }
-    else if (scenario == 3)
+    else if (scenario == ScenarioType::INDOOR_OFFICE_ENVIRONMENT)
     {
         if (!residentialDensity)
         {
@@ -992,7 +1007,7 @@ setNumberDevice(int scenario)
             return allBss_sce3;
         }
     }
-    else if (scenario == 5)
+    else if (scenario == ScenarioType::INDOOR_OFFICE_3GPP)
     {
         multipleBss = true;
         nBss = 12;
@@ -1091,7 +1106,7 @@ main(int argc, char* argv[])
     ratio = numerator / denominator;  // ratio of number of bf to ax BSS in multiple BSS scenario
     bool udp = true;
     uint16_t sensingPriority = 0; // Priority for sensing, AC_BE by default
-    int scenario = 1;
+    int scenario = ScenarioType::CIRCULAR_PLACEMENT;
     residentialDensity = 1;
     enableFrameAggregation = true;
     int trafficType = 0; // 0: Constant Bit Rate, 1: Poisson Traffic
@@ -1256,7 +1271,8 @@ main(int argc, char* argv[])
 
     Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel>();
 
-    if (scenario == 3)
+    // OFFICE SCENARIO WITH INDOOR PROPAGATION LOSS MODEL
+    if (scenario == ScenarioType::INDOOR_OFFICE_ENVIRONMENT)
     {
         Ptr<ThreeGppIndoorOfficePropagationLossModel> ThreeGppLossModel =
             CreateObject<ThreeGppIndoorOfficePropagationLossModel>();
@@ -1313,8 +1329,9 @@ main(int argc, char* argv[])
                          StringValue(codebookSizeMu),
                          "MaxNc",
                          UintegerValue(nc - 1));
-
-    if (scenario == 5)
+    
+    // OFFICE SCENARIO WITH 12 APs
+    if (scenario == ScenarioType::INDOOR_OFFICE_3GPP)
     {
         for (int i = 0; i < 12; i++)
         {
@@ -1534,7 +1551,7 @@ main(int argc, char* argv[])
 
     mobility.SetPositionAllocator(positionAlloc);
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-    if (scenario == 5)
+    if (scenario == ScenarioType::INDOOR_OFFICE_3GPP)
     {
         for (int i = 0; i < 12; i++)
         {
@@ -1569,7 +1586,7 @@ main(int argc, char* argv[])
 
     /* Internet Stack */
     InternetStackHelper stack;
-    if (scenario == 5)
+    if (scenario == ScenarioType::INDOOR_OFFICE_3GPP)
     {
         for (int i = 0; i < 12; i++)
         {
@@ -1604,7 +1621,7 @@ main(int argc, char* argv[])
 
     Ipv4AddressHelper address;
     address.SetBase("192.168.1.0", "255.255.255.0");
-    if (scenario == 5)
+    if (scenario == ScenarioType::INDOOR_OFFICE_3GPP)
     {
         for (int i = 0; i < 12; i++)
         {
@@ -1641,7 +1658,7 @@ main(int argc, char* argv[])
         }
     }
 
-    if (scenario == 5)
+    if (scenario == ScenarioType::INDOOR_OFFICE_3GPP)
     {
         for (int i = 0; i < 12; i++)
         {
@@ -1688,7 +1705,7 @@ main(int argc, char* argv[])
                 staWifiMac->SetBssid(apWifiMac->GetAddress(), 0U);
             }
         }
-        if (scenario == 3)
+        if (scenario == ScenarioType::INDOOR_OFFICE_ENVIRONMENT)
         {
             for (int i = nBfBss; i < nBss; i++)
             {
@@ -1725,7 +1742,7 @@ main(int argc, char* argv[])
     ApplicationContainer serverApplications, clientApplications;
     ApplicationContainer serverApplications_net2, clientApplications_net2;
 
-    if (scenario == 5)
+    if (scenario == ScenarioType::INDOOR_OFFICE_3GPP)
     {
         for (int i = 0; i < 12; i++)
         {
