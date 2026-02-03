@@ -45,7 +45,7 @@ option=$1
 if [ "$option" == "build" ]; then
     build_mode=$2
     if [ "$build_mode" == "debug" ]; then
-        ./ns3 clean
+        # ./ns3 clean
         ./ns3 configure --build-profile=debug --enable-examples --enable-tests --disable-werror
         ./ns3 build
     elif [ "$build_mode" == "optimized" ]; then
@@ -345,7 +345,7 @@ if [ "$option" == "residentialSensPrioScenario" ]; then
             # Run each iteration in the background for parallel processing
             (
                 # Example of running your program with parameters
-                ./ns3 run "examples/wireless/wifi-bf-network.cc --sensingPriority=$prio --seed=$nseed --scenario=3 --simulationTime=60.0" >/$Save_loc/Result/Result_sensPrio/Result_sensPrio_Residential/"prio=$prio"/nolog_priority=seed=$nseed.out 2>&1
+                ./ns3 run "examples/wireless/wifi-bf-network.cc --sensingPriority=$prio --seed=$nseed --scenario=3 --simulationTime=60.0" >/$Save_loc/Result/Result_sensPrio/Result_sensPrio_Residential/nolog_priority_prio$prio\_=seed=$nseed.out 2>&1
 
             ) &
             
@@ -358,3 +358,30 @@ if [ "$option" == "residentialSensPrioScenario" ]; then
         done
     done
 fi
+
+
+if [ "$option" == "volumetricVideoStreamingScenario" ]; then
+    counter=0
+    for prio in "${senPriority[@]}"; do
+        for nseed in "${seed[@]}"; do
+            echo "Processing file $counter: prio = $prio, Seed = $nseed"
+
+            # Run each iteration in the background for parallel processing
+            (
+                # Example of running your program with parameters
+                ./ns3 run "examples/wireless/wifi-bf-network.cc --nBss=1 --nStations=10 --ratioStasSensing=0.5 --sensingPriority=$prio --seed=$nseed --scenario=6 --simulationTime=60.0" >/$Save_loc/Result/Result_VVsens/Result_VVsens_Residential/nolog_priority_prio_$prio\_seed=$nseed.out 2>&1
+
+            ) 
+            
+            # ((counter++))
+
+            # # Limit the number of parallel processes (adjust as needed)
+            # if ((counter % 4 == 0)); then
+            #     wait
+            # fi
+        done
+    done
+fi
+
+
+# ./ns3 run "examples/wireless/wifi-bf-network.cc --nBss=1 --nStations=10 --ratioStasSensing=0.5 --sensingPriority=2 --seed=347 --scenario=6 --simulationTime=60.0" 

@@ -2954,6 +2954,7 @@ ApWifiMac::SetSensingPriority(uint16_t priority)
     uint16_t MaxCw = 0;
     if (!GetQosTxop(0))
     {
+        std::cout << "Qos is not supported, cannot set Sensing Priority" << std::endl;
         m_SensingPriority = priority;
         return;
     }
@@ -2964,34 +2965,40 @@ ApWifiMac::SetSensingPriority(uint16_t priority)
         case 0:
             MinCw = 0;
             MaxCw = 2;
+            std::cout << "Sensing Priority set to highest priority" << std::endl;
             break;
         case 1:
             MinCw = 0;
             MaxCw = 4;
+            std::cout << "Sensing Priority set to high priority" << std::endl;
             if (MaxCw < MinCw)
                 MaxCw = 1;
             break;
         case 2:
             MinCw = 0;
             MaxCw = 6;
+            std::cout << "Sensing Priority set to medium priority" << std::endl;
             if (MaxCw < MinCw)
                 MaxCw = 1;
             break;
         case 3:
             MinCw = 0;
             MaxCw = 8;
+            std::cout << "Sensing Priority set to low priority" << std::endl;
             if (MaxCw < MinCw)
                 MaxCw = 1;
             break;
         case 4:
             MinCw = 0;
             MaxCw = 10;
+            std::cout << "Sensing Priority set to lowest priority" << std::endl;
             if (MaxCw < MinCw)
                 MaxCw = 1;
             break;
         default:
             MinCw = 0;
             MaxCw = (GetQosTxop(0)->GetMaxCw(0U));
+            std::cout << "Sensing Priority set to default lowest priority" << std::endl;
             if (MaxCw < MinCw)
                 MaxCw = 1;
             break;

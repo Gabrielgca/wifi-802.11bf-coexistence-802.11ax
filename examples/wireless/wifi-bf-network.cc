@@ -106,7 +106,8 @@ enum ScenarioType
     PREDEFINED_LOCATIONS = 2,
     INDOOR_OFFICE_ENVIRONMENT = 3,
     RANDOM_PLACEMENT = 4,
-    INDOOR_OFFICE_3GPP = 5
+    INDOOR_OFFICE_3GPP = 5,
+    VOLUMETRIC_VIDEO_STREAMING = 6
 };
 
 Time m_sumDelay;
@@ -128,6 +129,7 @@ double radius;
 double numerator;
 double denominator;
 double ratio;
+double ratioStasSensing;
 bool residentialDensity;
 bool enableFrameAggregation;
 std::vector<int> indoorOfficeApOrder_vec(12, 0);
@@ -142,7 +144,7 @@ typedef struct Bss
     uint32_t nStations_sensing;
     uint32_t nStations_no_sensing;
     uint32_t nAp = 1;
-    NodeContainer wifiStaNode, wifiApNode, wifiStaNode_net2, WifiApNode_net2;
+    NodeContainer wifiStaNode, wifiApNode, wifiStaNode_net2, WifiApNode_net2, wifiStaSensingNode, wifiStaNoSensingNode;
     NetDeviceContainer apDevice, apDevice_net2, staDevices, staDevices_net2;
     Ipv4AddressHelper address, address_net2;
     Ipv4InterfaceContainer ApInterface, ApInterface_net2, StaInterface, StaInterface_net2;
@@ -693,6 +695,48 @@ setLocationScenario(int scenario,
             }
         }
     }
+    // Scenario 6 : Volumetric video streaming mocking circular placement
+    else if (scenario == ScenarioType::VOLUMETRIC_VIDEO_STREAMING){
+
+        double x_baseAp = 0.0;
+        double y_baseAp = 0.0;
+        double baseAngle = 0.0;
+        double rasioAngle = 0.0;
+
+        baseAngle = 2.0 * M_PI / nBss;
+        if (multipleBss)
+        {
+            rasioAngle = 1 / (sin(baseAngle / 2));
+            rasioAngle = 3;
+        }
+        std::cout << "rasioAngle: " << rasioAngle << std::endl;
+        for (int i = 0; i < nBss; i++)
+        {
+            x_baseAp = (rasioAngle * radius) * cos(baseAngle * i);
+            y_baseAp = (rasioAngle * radius) * sin(baseAngle * i);
+            if (i < nBfBss)
+            {
+                std::cout << "(bf)AP: " << x_baseAp << ", " << y_baseAp << std::endl;
+            }
+            else
+            {
+                std::cout << "(ax)AP: " << x_baseAp << ", " << y_baseAp << std::endl;
+            }
+            positionAlloc->Add(Vector(x_baseAp, y_baseAp, 0.0));
+            if (i < nBfBss)
+            {
+                double Angle = 2 * M_PI / ( allBss[i].nStations_sensing + allBss[i].nStations_no_sensing );
+                int totalStations = allBss[i].nStations_sensing + allBss[i].nStations_no_sensing;
+                for (uint32_t j = 0; j < totalStations; j++)
+                {
+                    double x = radius * cos(Angle * j) + x_baseAp;
+                    double y = radius * sin(Angle * j) + y_baseAp;
+                    std::cout << "(bf)STA: " << x << ", " << y << std::endl;
+                    positionAlloc->Add(Vector(x, y, 0.0));  
+                }
+            }
+        }
+    }
 
     return positionAlloc;
 }
@@ -772,12 +816,12 @@ setNumberDevice(int scenario)
 
         for (int i = 0; i < nBfBss; i++)
         {
-            NodeContainer wifiStaNode, wifiApNode;
-            wifiStaNode.Create(allBss[i].nStations_sensing);
+            NodeContainer wifiStaSensingNode, wifiApNode;
+            wifiStaSensingNode.Create(allBss[i].nStations_sensing);
             wifiApNode.Create(allBss[i].nAp);
             std::cout << i + 1 << ". BSS(bf) " << "has " << allBss[i].nStations_sensing
                       << " stations " << "and " << allBss[i].nAp << " AP" << std::endl;
-            allBss[i].wifiStaNode = wifiStaNode;
+            allBss[i].wifiStaSensingNode = wifiStaSensingNode;
             allBss[i].wifiApNode = wifiApNode;
         }
         for (int i = nBfBss; i < nBss; i++)
@@ -1057,12 +1101,12 @@ setNumberDevice(int scenario)
         {
             if (indoorOfficeApOrder_vec[i] == 1)
             {
-                NodeContainer wifiStaNode, wifiApNode;
-                wifiStaNode.Create(allBss[i].nStations_sensing);
+                NodeContainer wifiStaSensingNode, wifiApNode;
+                wifiStaSensingNode.Create(allBss[i].nStations_sensing);
                 wifiApNode.Create(allBss[i].nAp);
                 std::cout << i + 1 << ". BSS(bf) " << "has " << allBss[i].nStations_sensing
                           << " stations " << "and " << allBss[i].nAp << " AP" << std::endl;
-                allBss[i].wifiStaNode = wifiStaNode;
+                allBss[i].wifiStaSensingNode = wifiStaSensingNode;
                 allBss[i].wifiApNode = wifiApNode;
             }
             else if (indoorOfficeApOrder_vec[i] == 0)
@@ -1075,6 +1119,128 @@ setNumberDevice(int scenario)
                 allBss[i].wifiStaNode_net2 = wifiStaNode_net2;
                 allBss[i].WifiApNode_net2 = WifiApNode_net2;
             }
+        }
+
+        return allBss;
+    }
+    else if (scenario == ScenarioType::VOLUMETRIC_VIDEO_STREAMING)
+    {
+        if (nBss == 1 && nAxBss == 0)
+        {
+            multipleBss = false;
+            nBfBss = 1;
+        }
+        else if (nBss == 1 && nAxBss == 1)
+        {
+            multipleBss = false;
+            nBfBss = 0;
+        }
+        else
+        {
+            multipleBss = true;
+            denominator = nBss;
+            ratio = numerator / denominator;
+            if (ratio == 0.0)
+            {
+                nBfBss = int(nBss) - nAxBss;
+            }
+            else
+            {
+                nAxBss = int(nBss * ratio);
+                nBfBss = nBss - nAxBss;
+            }
+        }
+
+        Bss default_Bss;
+
+        denominator = nBss;
+        uint32_t nStations_sensing = ratioStasSensing * nStations;
+        uint32_t nStations_no_sensing = (1 - ratioStasSensing) * nStations;
+        std::cout << "ratioStasSensing: " << ratioStasSensing << std::endl;
+        std::cout << "nStations: " << nStations << std::endl;
+        std::cout << "nStations_sensing: " << nStations_sensing << ", nStations_no_sensing: " << nStations_no_sensing << std::endl;
+
+        default_Bss.nStations_sensing = nStations_sensing;
+        default_Bss.nStations_no_sensing = nStations_no_sensing;
+
+        if (ratio == 0.0)
+        {
+            nBfBss = int(nBss) - nAxBss;
+        }
+        else
+        {
+            nAxBss = int(nBss * ratio);
+            nBfBss = nBss - nAxBss;
+        }
+
+
+        std::vector<Bss> allBss(nBss, default_Bss);
+
+        for (int i = 0; i < nBfBss; i++)
+        {
+            // Generate unique MAC address for each station
+            char address_tempconst[18];
+            std::snprintf(address_tempconst,
+                          sizeof(address_tempconst),
+                          "00:00:00:00:00:%02x",
+                          i + 1);
+            Mac48Address address = Mac48Address(address_tempconst);
+            Calculation calc;
+            calc.m_avgTrueLatency = Seconds(0);
+            calc.m_sumTrueLatency = Seconds(0);
+            calc.m_innerCounter = 0;
+            calc.m_collisionCounter = 0;
+            calc.stillSensing = false;
+            allCalculation.insert({address, calc});
+        }
+
+        int j = 0;
+        // Generate unique MAC address for each station in ax BSS
+        for (int i = nBfBss; i < nBss; i++)
+        // for (int i = nBfBss; i < nBfBss+1; i++)
+        {
+            char address_tempconst[18];
+            j = i + nStations * nBfBss;
+            std::snprintf(address_tempconst,
+                          sizeof(address_tempconst),
+                          "00:00:00:00:00:%02x",
+                          j + 1);
+            Mac48Address address = Mac48Address(address_tempconst);
+            Calculation calc;
+            calc.m_avgTrueLatency = Seconds(0);
+            calc.m_sumTrueLatency = Seconds(0);
+            calc.m_innerCounter = 0;
+            calc.m_collisionCounter = 0;
+            calc.stillSensing = false;
+            allCalculation_net2.insert({address, calc});
+        }
+
+        // Create NodeContainers for each bf and ax BSS
+        // TODO: Make the Bf network work with stations with sensing and no sensing
+        for (int i = 0; i < nBfBss; i++)
+        {
+            NodeContainer wifiStaSensingNode, wifiStaNoSensingNode, wifiApNode;
+            wifiStaSensingNode.Create(allBss[i].nStations_sensing);
+            wifiStaNoSensingNode.Create(allBss[i].nStations_no_sensing);
+            
+            wifiApNode.Create(allBss[i].nAp);
+            std::cout << i + 1 << ". BSS(bf) " << "has " << allBss[i].nStations_sensing
+                      << " sensing stations, " << allBss[i].nStations_no_sensing
+                      << " no sensing stations and " << allBss[i].nAp << " AP" << std::endl;
+
+            allBss[i].wifiStaSensingNode = wifiStaSensingNode;
+            allBss[i].wifiStaNoSensingNode = wifiStaNoSensingNode;
+            allBss[i].wifiApNode = wifiApNode;
+        }
+        for (int i = nBfBss; i < nBss; i++)
+        {
+            NodeContainer wifiStaNode_net2, WifiApNode_net2;
+            wifiStaNode_net2.Create(allBss[i].nStations_no_sensing);
+            WifiApNode_net2.Create(allBss[i].nAp);
+            std::cout << i + 1 << ". BSS(ax) " << "has " << allBss[i].nStations_no_sensing
+                      << " stations " << "and " << allBss[i].nAp << " AP" << std::endl;
+            allBss[i].wifiStaNode_net2 = wifiStaNode_net2;
+            allBss[i].WifiApNode_net2 = WifiApNode_net2;
         }
 
         return allBss;
@@ -1104,6 +1270,7 @@ main(int argc, char* argv[])
     numerator = 0.0;                  // numerator for the ratio in multiple BSS scenario
     denominator = nBss;               // denominator for the ratio in multiple BSS scenario
     ratio = numerator / denominator;  // ratio of number of bf to ax BSS in multiple BSS scenario
+    ratioStasSensing = 1.0;           // ratio of number of sensing STAs to total STAS in each BSS
     bool udp = true;
     uint16_t sensingPriority = 0; // Priority for sensing, AC_BE by default
     int scenario = ScenarioType::CIRCULAR_PLACEMENT;
@@ -1197,6 +1364,7 @@ main(int argc, char* argv[])
                  residentialDensity);
     cmd.AddValue("sensingInterval", "Rate for sensing procedure", sensingInterval);
     cmd.AddValue("sensingIntervalType", "Type of sensing interval", sensingIntervalType);
+    cmd.AddValue("ratioStasSensing", "The ratio of how many stations perform sensing in a BSS", ratioStasSensing);
     cmd.AddValue("enableFrameAggregation",
                  "Enable/disable frame aggregation",
                  enableFrameAggregation);
@@ -1222,6 +1390,10 @@ main(int argc, char* argv[])
     m_avgDelay = Seconds(0);
     m_sumTrueLatency = Seconds(0);
     m_avgTrueLatency = Seconds(0);
+
+
+    // uint32_t nStations_sensing = (int) ratioStasSensing * nStations;
+    // uint32_t nStations_no_sensing = (int) (1 - ratioStasSensing) * nStations;
 
     std::vector<Bss> allBss = setNumberDevice(scenario);
 
@@ -1372,7 +1544,7 @@ main(int argc, char* argv[])
                                             UintegerValue(nStations),
                                             "SoundingType",
                                             UintegerValue(SoundingType));
-                allBss[i].apDevice = wifi.Install(phy, macAp, allBss[i].wifiApNode);
+                allBss[i].apDevice.Add(wifi.Install(phy, macAp, allBss[i].wifiApNode));
                 macSta.SetType("ns3::StaWifiMac",
                                "Ssid",
                                SsidValue(ssid),
@@ -1388,7 +1560,7 @@ main(int argc, char* argv[])
                                BooleanValue(true),
                                "ManualConnection",
                                BooleanValue(true));
-                allBss[i].staDevices = wifi.Install(phy, macSta, allBss[i].wifiStaNode);
+                allBss[i].staDevices.Add(wifi.Install(phy, macSta, allBss[i].wifiStaSensingNode));
             }
             else if (indoorOfficeApOrder_vec[i] == 0)
             {
@@ -1410,7 +1582,7 @@ main(int argc, char* argv[])
 
                 macAp_net2.SetType("ns3::ApWifiMac", "Ssid", SsidValue(ssid));
 
-                allBss[i].apDevice_net2 = wifi.Install(phy, macAp_net2, allBss[i].WifiApNode_net2);
+                allBss[i].apDevice_net2.Add(wifi.Install(phy, macAp_net2, allBss[i].WifiApNode_net2));
 
                 macSta_net2.SetType("ns3::StaWifiMac",
                                     "Ssid",
@@ -1418,8 +1590,7 @@ main(int argc, char* argv[])
                                     "ManualConnection",
                                     BooleanValue(true));
 
-                allBss[i].staDevices_net2 =
-                    wifi.Install(phy, macSta_net2, allBss[i].wifiStaNode_net2);
+                allBss[i].staDevices_net2.Add(wifi.Install(phy, macSta_net2, allBss[i].wifiStaNode_net2));
             }
         }
     }
@@ -1464,7 +1635,7 @@ main(int argc, char* argv[])
                                         UintegerValue(SoundingType));
             for (int i = 0; i < nBfBss; i++)
             {
-                allBss[i].apDevice = wifi.Install(phy, macAp, allBss[i].wifiApNode);
+                allBss[i].apDevice.Add(wifi.Install(phy, macAp, allBss[i].wifiApNode));
             }
             macSta.SetType("ns3::StaWifiMac",
                            "Ssid",
@@ -1481,9 +1652,36 @@ main(int argc, char* argv[])
                            BooleanValue(true),
                            "ManualConnection",
                            BooleanValue(true));
+            
             for (int i = 0; i < nBfBss; i++)
             {
-                allBss[i].staDevices = wifi.Install(phy, macSta, allBss[i].wifiStaNode);
+                
+                if (allBss[i].wifiStaNoSensingNode.GetN() == 0)
+                {
+                    continue;
+                }
+                // Disable WiFi Sensing for stations without sensing capability
+                
+                // macSta.SetType("ns3::StaWifiMac",
+                //            "Ssid",
+                //            SsidValue(ssid),
+                //            "ActiveProbing",
+                //            BooleanValue(false),
+                //            "WiFiSensingSupported",
+                //            BooleanValue(false),
+                //            "CfpMaxDuration",
+                //            TimeValue(MicroSeconds(cfpMaxDurationMs * 1024)),
+                //            "CtsToSelfSupported",
+                //            BooleanValue(enableCTStoSelf),
+                //            "QosSupported",
+                //            BooleanValue(true),
+                //            "ManualConnection",
+                //            BooleanValue(true));
+                           
+                // std::cout << "Installing stations without sensing in BSS " << i+1 << " " << allBss[i].wifiStaNoSensingNode.GetN() << " Stas" << std::endl;
+                
+                allBss[i].staDevices.Add(wifi.Install(phy, macSta, allBss[i].wifiStaNoSensingNode));
+                // allBss[i].staDevices.Add(wifi.Install(phy, macSta, allBss[i].wifiStaSensingNode));
             }
         }
 
@@ -1518,7 +1716,7 @@ main(int argc, char* argv[])
 
         for (int i = nBfBss; i < nBss; i++)
         {
-            allBss[i].apDevice_net2 = wifi.Install(phy, macAp_net2, allBss[i].WifiApNode_net2);
+            allBss[i].apDevice_net2.Add(wifi.Install(phy, macAp_net2, allBss[i].WifiApNode_net2));
         }
 
         macSta_net2.SetType("ns3::StaWifiMac",
@@ -1540,7 +1738,7 @@ main(int argc, char* argv[])
 
         for (int i = nBfBss; i < nBss; i++)
         {
-            allBss[i].staDevices_net2 = wifi.Install(phy, macSta_net2, allBss[i].wifiStaNode_net2);
+            allBss[i].staDevices_net2.Add(wifi.Install(phy, macSta_net2, allBss[i].wifiStaNode_net2));
         }
     }
 
@@ -1558,7 +1756,7 @@ main(int argc, char* argv[])
             if (indoorOfficeApOrder_vec[i] == 1)
             {
                 mobility.Install(allBss[i].wifiApNode);
-                mobility.Install(allBss[i].wifiStaNode);
+                mobility.Install(allBss[i].wifiStaSensingNode);
             }
             else if (indoorOfficeApOrder_vec[i] == 0)
             {
@@ -1574,7 +1772,12 @@ main(int argc, char* argv[])
             if (i < nBfBss)
             {
                 mobility.Install(allBss[i].wifiApNode);
-                mobility.Install(allBss[i].wifiStaNode);
+                mobility.Install(allBss[i].wifiStaSensingNode);
+
+                if (allBss[i].wifiStaNoSensingNode.GetN() > 0)
+                {
+                    mobility.Install(allBss[i].wifiStaNoSensingNode);
+                }
             }
             else
             {
@@ -1593,7 +1796,7 @@ main(int argc, char* argv[])
             if (indoorOfficeApOrder_vec[i] == 1)
             {
                 stack.Install(allBss[i].wifiApNode);
-                stack.Install(allBss[i].wifiStaNode);
+                stack.Install(allBss[i].wifiStaSensingNode);
             }
             else if (indoorOfficeApOrder_vec[i] == 0)
             {
@@ -1609,7 +1812,12 @@ main(int argc, char* argv[])
             if (i < nBfBss)
             {
                 stack.Install(allBss[i].wifiApNode);
-                stack.Install(allBss[i].wifiStaNode);
+                stack.Install(allBss[i].wifiStaSensingNode);
+
+                if (allBss[i].wifiStaNoSensingNode.GetN() > 0)
+                {
+                    stack.Install(allBss[i].wifiStaNoSensingNode);
+                }
             }
             else
             {
@@ -1645,9 +1853,12 @@ main(int argc, char* argv[])
         {
             if (i < nBfBss)
             {
+                // std::cout << "Assigned IP addresses for BSS " << i + 1 << " (bf)" << std::endl;
                 allBss[i].address = address;
                 allBss[i].ApInterface = address.Assign(allBss[i].apDevice);
+                // std::cout << "AP DONE ASSIGN Assigned IP addresses for BSS " << i + 1 << " (bf)" << std::endl;
                 allBss[i].StaInterface = address.Assign(allBss[i].staDevices);
+                // std::cout << "AFTER Assigned IP addresses for BSS " << i + 1 << " (bf)" << std::endl;
             }
             else
             {
@@ -1750,10 +1961,10 @@ main(int argc, char* argv[])
             {
                 /* Setting Applications for IEEE 802.11bf network*/
                 uint32_t portNumber = 9;
-                auto serverNodes = std::ref(allBss[i].wifiStaNode);
+                auto serverNodes = std::ref(allBss[i].wifiStaSensingNode);
                 Ipv4InterfaceContainer serverInterfaces;
                 NodeContainer clientNodes;
-                for (uint32_t index = 0; index < allBss[i].wifiStaNode.GetN(); ++index)
+                for (uint32_t index = 0; index < allBss[i].wifiStaSensingNode.GetN(); ++index)
                 {
                     serverInterfaces.Add(allBss[i].StaInterface.Get(index));
                     clientNodes.Add(allBss[i].wifiApNode.Get(0));
@@ -1767,7 +1978,7 @@ main(int argc, char* argv[])
                     serverApplications.Start(Seconds(0.0));
                     serverApplications.Stop(Seconds(simulationTime + 1));
 
-                    for (uint32_t index = 0; index < allBss[i].wifiStaNode.GetN(); ++index)
+                    for (uint32_t index = 0; index < allBss[i].wifiStaSensingNode.GetN(); ++index)
                     {
                         UdpClientHelper client(serverInterfaces.GetAddress(index), portNumber);
                         client.SetAttribute("MaxPackets", UintegerValue(4294967295U));
@@ -1791,7 +2002,7 @@ main(int argc, char* argv[])
                     serverApplications.Start(Seconds(0.0));
                     serverApplications.Stop(Seconds(simulationTime + 1));
 
-                    for (uint32_t index = 0; index < allBss[i].wifiStaNode.GetN(); ++index)
+                    for (uint32_t index = 0; index < allBss[i].wifiStaSensingNode.GetN(); ++index)
                     {
                         OnOffHelper onoff("ns3::TcpSocketFactory", Ipv4Address::GetAny());
                         onoff.SetAttribute("OnTime",
@@ -1801,7 +2012,7 @@ main(int argc, char* argv[])
                         onoff.SetAttribute("PacketSize", UintegerValue(payloadSize));
                         onoff.SetAttribute(
                             "DataRate",
-                            DataRateValue(1000000000 / allBss[i].wifiStaNode.GetN())); // bit/s
+                            DataRateValue(1000000000 / allBss[i].wifiStaSensingNode.GetN())); // bit/s
                         AddressValue remoteAddress(
                             InetSocketAddress(serverInterfaces.GetAddress(index), portNumber_net2));
                         onoff.SetAttribute("Remote", remoteAddress);
@@ -1967,7 +2178,7 @@ main(int argc, char* argv[])
             throughput += ((rxBytes * 8) / (simulationTime * 1000000.0)); // Mbit/s
         }
 
-        std::cout << "Overal throughput from 802.11bf BSS: " << throughput << " Mbit/s"
+        std::cout << "1 Overal throughput from 802.11bf BSS: " << throughput << " Mbit/s"
                   << std::endl;
 
         if (udp)
@@ -2053,14 +2264,16 @@ main(int argc, char* argv[])
         uint32_t portNumber = 9;
         for (int i = 0; i < nBfBss; i++)
         {
-            auto serverNodes = std::ref(allBss[i].wifiStaNode);
+            auto serverNodes = std::ref(allBss[i].wifiStaSensingNode);
             Ipv4InterfaceContainer serverInterfaces;
             NodeContainer clientNodes;
-            for (uint32_t index = 0; index < allBss[i].wifiStaNode.GetN(); ++index)
+            for (uint32_t index = 0; index < allBss[i].wifiStaSensingNode.GetN(); ++index)
             {
                 serverInterfaces.Add(allBss[i].StaInterface.Get(index));
                 clientNodes.Add(allBss[i].wifiApNode.Get(0));
             }
+
+            // if (allBss[i].wifiStaNoSensingNode.GetN() != 0){}
 
             if (udp)
             {
@@ -2070,7 +2283,7 @@ main(int argc, char* argv[])
                 serverApplications.Start(Seconds(0.0));
                 serverApplications.Stop(Seconds(simulationTime + 1));
 
-                for (uint32_t index = 0; index < allBss[i].wifiStaNode.GetN(); ++index)
+                for (uint32_t index = 0; index < allBss[i].wifiStaSensingNode.GetN(); ++index)
                 {
                     UdpClientHelper client(serverInterfaces.GetAddress(index), portNumber);
                     client.SetAttribute("MaxPackets", UintegerValue(4294967295U));
@@ -2095,7 +2308,7 @@ main(int argc, char* argv[])
                 serverApplications.Start(Seconds(0.0));
                 serverApplications.Stop(Seconds(simulationTime + 1));
 
-                for (uint32_t index = 0; index < allBss[i].wifiStaNode.GetN(); ++index)
+                for (uint32_t index = 0; index < allBss[i].wifiStaSensingNode.GetN(); ++index)
                 {
                     OnOffHelper onoff("ns3::TcpSocketFactory", Ipv4Address::GetAny());
                     onoff.SetAttribute("OnTime",
@@ -2105,7 +2318,7 @@ main(int argc, char* argv[])
                     onoff.SetAttribute("PacketSize", UintegerValue(payloadSize));
                     onoff.SetAttribute(
                         "DataRate",
-                        DataRateValue(1000000000 / allBss[i].wifiStaNode.GetN())); // bit/s
+                        DataRateValue(1000000000 / allBss[i].wifiStaSensingNode.GetN())); // bit/s
                     AddressValue remoteAddress(
                         InetSocketAddress(serverInterfaces.GetAddress(index), portNumber_net2));
                     onoff.SetAttribute("Remote", remoteAddress);
@@ -2283,7 +2496,7 @@ main(int argc, char* argv[])
                 throughput += ((rxBytes * 8) / (simulationTime * 1000000.0)); // Mbit/s
             }
 
-            std::cout << "Overal throughput from 802.11bf BSS: " << throughput << " Mbit/s"
+            std::cout << "2 Overal throughput from 802.11bf BSS: " << throughput << " Mbit/s"
                       << std::endl;
 
             if (udp)
@@ -2330,7 +2543,7 @@ main(int argc, char* argv[])
                            DynamicCast<UdpServer>(serverApplications.Get(index))->GetReceived();
                 throughput += ((rxBytes * 8) / (simulationTime * 1000000.0)); // Mbit/s
             }
-            std::cout << "Overal throughput from 802.11bf BSS: " << throughput << " Mbit/s"
+            std::cout << "3 Overal throughput from 802.11bf BSS: " << throughput << " Mbit/s"
                       << std::endl;
 
             if (throughput_net2 + throughput > 0)
