@@ -1655,6 +1655,7 @@ main(int argc, char* argv[])
             
             for (int i = 0; i < nBfBss; i++)
             {
+                allBss[i].staDevices.Add(wifi.Install(phy, macSta, allBss[i].wifiStaSensingNode));
                 
                 if (allBss[i].wifiStaNoSensingNode.GetN() == 0)
                 {
@@ -1662,26 +1663,25 @@ main(int argc, char* argv[])
                 }
                 // Disable WiFi Sensing for stations without sensing capability
                 
-                // macSta.SetType("ns3::StaWifiMac",
-                //            "Ssid",
-                //            SsidValue(ssid),
-                //            "ActiveProbing",
-                //            BooleanValue(false),
-                //            "WiFiSensingSupported",
-                //            BooleanValue(false),
-                //            "CfpMaxDuration",
-                //            TimeValue(MicroSeconds(cfpMaxDurationMs * 1024)),
-                //            "CtsToSelfSupported",
-                //            BooleanValue(enableCTStoSelf),
-                //            "QosSupported",
-                //            BooleanValue(true),
-                //            "ManualConnection",
-                //            BooleanValue(true));
+                macSta.SetType("ns3::StaWifiMac",
+                           "Ssid",
+                           SsidValue(ssid),
+                           "ActiveProbing",
+                           BooleanValue(false),
+                           "WiFiSensingSupported",
+                           BooleanValue(false),
+                           "CfpMaxDuration",
+                           TimeValue(MicroSeconds(cfpMaxDurationMs * 1024)),
+                           "CtsToSelfSupported",
+                           BooleanValue(enableCTStoSelf),
+                           "QosSupported",
+                           BooleanValue(true),
+                           "ManualConnection",
+                           BooleanValue(true));
                            
                 // std::cout << "Installing stations without sensing in BSS " << i+1 << " " << allBss[i].wifiStaNoSensingNode.GetN() << " Stas" << std::endl;
                 
                 allBss[i].staDevices.Add(wifi.Install(phy, macSta, allBss[i].wifiStaNoSensingNode));
-                // allBss[i].staDevices.Add(wifi.Install(phy, macSta, allBss[i].wifiStaSensingNode));
             }
         }
 
@@ -2265,6 +2265,8 @@ main(int argc, char* argv[])
         for (int i = 0; i < nBfBss; i++)
         {
             auto serverNodes = std::ref(allBss[i].wifiStaSensingNode);
+            auto serverNodes_no_sensing = std::ref(allBss[i].wifiStaNoSensingNode);
+
             Ipv4InterfaceContainer serverInterfaces;
             NodeContainer clientNodes;
             for (uint32_t index = 0; index < allBss[i].wifiStaSensingNode.GetN(); ++index)
@@ -2273,13 +2275,20 @@ main(int argc, char* argv[])
                 clientNodes.Add(allBss[i].wifiApNode.Get(0));
             }
 
-            // if (allBss[i].wifiStaNoSensingNode.GetN() != 0){}
+            // if (allBss[i].wifiStaNoSensingNode.GetN() != 0){
+
+            // }
 
             if (udp)
             {
                 // UDP flow for Access Point
+
+
+                std::cout << "UDP FLOW FOR BSS " << i + 1 << " WITH "
+                          << allBss[i].wifiStaSensingNode.GetN() << " STAS" <<std::endl;
                 UdpServerHelper server(portNumber);
-                serverApplications = server.Install(serverNodes.get());
+                serverApplications.Add(server.Install(serverNodes.get()));
+                // serverApplications.Add(server.Install(serverNodes_no_sensing.get()));
                 serverApplications.Start(Seconds(0.0));
                 serverApplications.Stop(Seconds(simulationTime + 1));
 
