@@ -143,7 +143,7 @@ class InfrastructureWifiMac : public WifiMac
      */
     void StartCfPeriod();
     /**
-     * Start CF period.
+     * Stop CF period.
      *
      */
     void StopCfPeriod();

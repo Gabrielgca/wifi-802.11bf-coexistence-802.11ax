@@ -2809,10 +2809,10 @@ ApWifiMac::SendNextCfFrame(uint8_t linkId)
         return;
     }
 
-    if (GetWifiRemoteStationManager(0U) != nullptr)
-    {
-        GetWifiRemoteStationManager(0U)->SetPcfSupported(true);
-    }
+    //if (GetWifiRemoteStationManager(0U) != nullptr)
+    //{
+    //    GetWifiRemoteStationManager(0U)->SetPcfSupported(true);
+    //}
     if (GetLink(0U).feManager->IsMacTxOkCallbackNull())
     {
         GetLink(0U).feManager->SetMacTxOkCallback(MakeCallback(&ApWifiMac::TxOk, this));
@@ -2821,7 +2821,7 @@ ApWifiMac::SendNextCfFrame(uint8_t linkId)
     {
         GetLink(0U).feManager->SetInfShareInfo(MakeCallback(&InfrastructureWifiMac::SetInfo, this));
     }
-    GetChannelAccessManager(0U)->setPcfSupported(true);
+    // GetChannelAccessManager(0U)->setPcfSupported(true);
 }
 
 void

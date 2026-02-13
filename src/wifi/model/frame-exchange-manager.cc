@@ -1248,6 +1248,7 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
                 {
                     m_infMacSTAReceiveCallback(m_dcf);
                 }
+                // std::cout << Simulator::Now() << " || Promiscuous received : " << mpdu->GetHeader() << std::endl;
                 m_rxMiddle->Receive(mpdu, m_linkId);
             }
         }
@@ -1436,7 +1437,7 @@ FrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                                     txVector,
                                     rxSnr);
         }
-
+        // std::cout << Simulator::Now() << " || Received : " << hdr << std::endl;
         m_rxMiddle->Receive(mpdu, m_linkId);
     }
     else if (hdr.IsData() && !hdr.IsQosData())
@@ -1452,7 +1453,7 @@ FrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                                 txVector,
                                 rxSnr);
         }
-
+        // std::cout << Simulator::Now() << " || 2 Received : " << hdr << std::endl;
         m_rxMiddle->Receive(mpdu, m_linkId);
     }
 }

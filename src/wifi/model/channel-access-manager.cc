@@ -1058,6 +1058,7 @@ ChannelAccessManager::NotifyNavStartNow(Time duration)
     NS_LOG_FUNCTION(this << duration);
     NS_LOG_DEBUG("nav start for=" << duration);
     UpdateBackoff();
+    //std::cout << "NAV starts at " << Simulator::Now() << " and end at " << (Simulator::Now() + duration).As(Time::NS) << "ns" << std::endl;
     m_lastNavEnd = std::max(m_lastNavEnd, Simulator::Now() + duration);
 }
 

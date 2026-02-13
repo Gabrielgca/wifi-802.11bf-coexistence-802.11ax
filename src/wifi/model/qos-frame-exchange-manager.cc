@@ -227,6 +227,7 @@ QosFrameExchangeManager::StartTransmission(Ptr<QosTxop> edca, Time txopDuration)
 
             if (StartFrameExchange(m_edca, txopDuration, true))
             {
+                // std::cout << "Started new TXOP on link " << +m_linkId << std::endl;
                 m_initialFrame = true;
                 return true;
             }
@@ -239,6 +240,7 @@ QosFrameExchangeManager::StartTransmission(Ptr<QosTxop> edca, Time txopDuration)
         }
 
         // We are continuing a TXOP, check if we can transmit another frame
+        // std::cout << "m_initialFrame: " << m_initialFrame << std::endl;
         NS_ASSERT(!m_initialFrame);
 
         if (!StartFrameExchange(m_edca, m_edca->GetRemainingTxop(m_linkId), false))
@@ -788,7 +790,7 @@ QosFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                                 txVector,
                                 rxSnr);
         }
-
+        // std::cout << "QOS Received " << hdr.GetTypeString() << " from=" << hdr.GetAddr2() << std::endl;
         // Forward up the frame
         m_rxMiddle->Receive(mpdu, m_linkId);
 

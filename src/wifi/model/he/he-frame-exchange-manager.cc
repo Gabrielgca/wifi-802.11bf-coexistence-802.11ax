@@ -2727,6 +2727,7 @@ HeFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                                             m_apMac->GetCfpMaxDuration(),
                                             false);
                     }
+                    //Reporting phase
                     else
                     {
                         m_apMac->GetWifiPhy()->NotifyMonitorChannelAccess(GetAddress(),
@@ -2738,8 +2739,8 @@ HeFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                         m_edca->NotifyChannelReleasedForPCF(0U, false, Seconds(0));
                         ResetSensingTimeout();
                         m_apMac->EndSensing();
-                        // std::cout << "Sensing successfully ended from : " << GetAddress() << " "
-                        //           << Simulator::Now() << std::endl;
+                        std::cout << "Sensing successfully ended from : " << GetAddress() << " "
+                                   << Simulator::Now() << std::endl;
                         m_edca = nullptr;
                     }
                 }
