@@ -1725,8 +1725,14 @@ main(int argc, char* argv[])
                 UintegerValue(0)); // Enable A-MSDU with the highest maximum size (in Bytes) allowed
         }
 
-
-
+        //FOR DEBUG PURPOSE
+        macAp_net2.SetType("ns3::ApWifiMac",
+            "Ssid", SsidValue(ssid),
+                                "WiFiSensingSupported",
+                                BooleanValue(false),
+                              "SensingPriority",
+                              UintegerValue(sensingPriority)
+        );
 
         for (int i = nBfBss; i < nBss; i++)
         {
