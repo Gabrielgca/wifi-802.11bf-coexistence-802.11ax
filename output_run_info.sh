@@ -136,7 +136,7 @@ if [ "$option" == "multipleBssAx" ]; then
         done
     done
 fi
-
+# ./ns3 run "examples/wireless/wifi-bf-network.cc --nBss=2 --nAxBss=1 --nStations=4 --ratioStasSensing=0.5 --sensingPriority=1 --seed=347 --scenario=6 --simulationTime=10.0" 
 # nBss=("4")
 if [ "$option" == "multipleBssBf" ]; then
     counter=0
@@ -269,7 +269,7 @@ if [ "$option" == "multipleBssBfIntervalOffice" ]; then
             (
                 ./ns3 run "examples/wireless/wifi-bf-network.cc --scenario=5 --nBfBss=6 --simulationTime=60.0 --sensingInterval=$Interval --seed=$s" --no-build >$Save_loc/Result/Result_multipleBSS/multipleBFInterval/"Interval=$Interval"/nolog_multipleBss_seed=$s.out 2>&1
             ) &
-
+ # ./ns3 run "examples/wireless/wifi-bf-network.cc --scenario=5 --nBfBss=5 --nAxBss=1 --sensingInterval=10 --seed=347 --simulationTime=3.0"
             ((counter++))
 
             # Limit the number of parallel processes (adjust as needed)

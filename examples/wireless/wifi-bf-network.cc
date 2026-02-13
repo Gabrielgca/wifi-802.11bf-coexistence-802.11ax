@@ -735,6 +735,17 @@ setLocationScenario(int scenario,
                     positionAlloc->Add(Vector(x, y, 0.0));  
                 }
             }
+            else
+            {
+                double Angle = 2 * M_PI / allBss[i].nStations_no_sensing;
+                for (uint32_t j = 0; j < allBss[i].nStations_no_sensing; j++)
+                {
+                    double x = radius * cos(Angle * j) + x_baseAp;
+                    double y = radius * sin(Angle * j) + y_baseAp;
+                    std::cout << "(ax)STA: " << x << ", " << y << std::endl;
+                    positionAlloc->Add(Vector(x, y, 0.0));
+                }
+            }
         }
     }
 
@@ -1263,7 +1274,7 @@ main(int argc, char* argv[])
     multipleBss = true;
     bool downlink{true};
     uint64_t cfpMaxDurationMs = 50;   // milliseconds
-    uint64_t sensingInterval = 50;    // milliseconds
+    uint64_t sensingInterval = 100;    // milliseconds
     uint64_t sensingIntervalType = 0; // 0: Constant, 1: Poisson-distributed
     double simulationTime = 5.0;      // seconds
     radius = 2.0;                     // meters
@@ -1713,6 +1724,9 @@ main(int argc, char* argv[])
                 "BE_MaxAmsduSize",
                 UintegerValue(0)); // Enable A-MSDU with the highest maximum size (in Bytes) allowed
         }
+
+
+
 
         for (int i = nBfBss; i < nBss; i++)
         {
@@ -2261,12 +2275,14 @@ main(int argc, char* argv[])
     else
     {
         /* Setting Applications for IEEE 802.11bf network*/
+        // Stas are sending data to the AP so they are servers here
         uint32_t portNumber = 9;
         for (int i = 0; i < nBfBss; i++)
         {
             auto serverNodes = std::ref(allBss[i].wifiStaSensingNode);
-            auto serverNodes_no_sensing = std::ref(allBss[i].wifiStaNoSensingNode);
-
+            // auto serverNodes = std::ref(allBss[i].wifiApNode);
+            // auto clientNodes_no_sensing = std::ref(allBss[i].wifiStaNoSensingNode);
+            
             Ipv4InterfaceContainer serverInterfaces;
             NodeContainer clientNodes;
             for (uint32_t index = 0; index < allBss[i].wifiStaSensingNode.GetN(); ++index)
@@ -2288,7 +2304,7 @@ main(int argc, char* argv[])
                           << allBss[i].wifiStaSensingNode.GetN() << " STAS" <<std::endl;
                 UdpServerHelper server(portNumber);
                 serverApplications.Add(server.Install(serverNodes.get()));
-                // serverApplications.Add(server.Install(serverNodes_no_sensing.get()));
+
                 serverApplications.Start(Seconds(0.0));
                 serverApplications.Stop(Seconds(simulationTime + 1));
 
@@ -2310,6 +2326,8 @@ main(int argc, char* argv[])
             else
             {
                 // TCP flow
+                std::cout << "TCP FLOW FOR BSS " << i + 1 << " WITH "
+                                        << allBss[i].wifiStaSensingNode.GetN() << " STAS" <<std::endl;
                 uint32_t portNumber_net2 = 50000;
                 Address localAddress(InetSocketAddress(Ipv4Address::GetAny(), portNumber_net2));
                 PacketSinkHelper packetSinkHelper("ns3::TcpSocketFactory", localAddress);
@@ -2528,7 +2546,7 @@ main(int argc, char* argv[])
                 throughput_net2 += ((rxBytes * 8) / (simulationTime * 1000000.0)); // Mbit/s
             }
 
-            std::cout << "Overal throughput from 802.11ax BSS: " << throughput_net2 << " Mbit/s"
+            std::cout << "3 Overal throughput from 802.11ax BSS: " << throughput_net2 << " Mbit/s"
                       << std::endl;
 
             if (throughput_net2 + throughput > 0)
@@ -2546,13 +2564,30 @@ main(int argc, char* argv[])
         }
         else
         {
-            for (uint32_t index = 0; index < serverApplications.GetN(); index++)
+            if (udp)
             {
-                rxBytes += payloadSize *
-                           DynamicCast<UdpServer>(serverApplications.Get(index))->GetReceived();
+                for (uint32_t index = 0; index < serverApplications.GetN(); index++)
+                {
+                    std::cout << "Packets received: "
+                              << DynamicCast<UdpServer>(serverApplications.Get(index))->GetReceived()
+                              << std::endl;
+                    rxBytes += payloadSize *
+                               DynamicCast<UdpServer>(serverApplications.Get(index))->GetReceived();
+                    throughput += ((rxBytes * 8) / (simulationTime * 1000000.0)); // Mbit/s
+                }
+            }
+            else
+            {
+                std::cout << "TCP " << std::endl;
+                for (uint32_t index = 0; index < serverApplications.GetN(); index++)
+                {
+                    std::cout << "inside loop"  << std::endl;
+                    rxBytes += DynamicCast<PacketSink>(serverApplications.Get(index))->GetTotalRx();
+                }
                 throughput += ((rxBytes * 8) / (simulationTime * 1000000.0)); // Mbit/s
             }
-            std::cout << "3 Overal throughput from 802.11bf BSS: " << throughput << " Mbit/s"
+
+            std::cout << "4 Overal throughput from 802.11bf BSS: " << throughput << " Mbit/s"
                       << std::endl;
 
             if (throughput_net2 + throughput > 0)

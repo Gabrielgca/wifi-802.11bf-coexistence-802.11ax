@@ -1402,7 +1402,7 @@ void
 ApWifiMac::SendOneBeacon(uint8_t linkId)
 {
     NS_LOG_FUNCTION(this << +linkId);
-
+    std::cout << "Sending beacon from : " << GetAddress() << " on link " << +linkId << " is sensing supported : " << m_WiFiSensingSupported << " at " << Simulator::Now() << std::endl;
     auto& link = GetLink(linkId);
     WifiMacHeader hdr;
     hdr.SetType(WIFI_MAC_MGT_BEACON);
@@ -2830,6 +2830,8 @@ ApWifiMac::StartSensing(uint8_t linkId)
     NS_LOG_FUNCTION(this);
     NS_ASSERT(GetPcfSupported() && GetQosSupported());
 
+
+    std::cout << "Start sensing by : " << GetAddress() << " " << Simulator::Now() << std::endl;
     GetQosTxop(AcIndex(m_SensingPriority))->SetInfMac(this);
     GetQosTxop(AcIndex(m_SensingPriority))
         ->SendCfFrame(WIFI_MAC_QOSDATA_CFPOLL, Mac48Address::GetBroadcast(), 0U);
