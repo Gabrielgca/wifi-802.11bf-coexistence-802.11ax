@@ -334,6 +334,7 @@ RrMultiUserScheduler::GetTxVectorForUlMu(Func canBeSolicited)
 
         // prepare the MAC header of a frame that would be sent to the candidate station,
         // just for the purpose of retrieving the TXVECTOR used to transmit to that station
+        std::cout << "GetTxVectorForUlMu: candidate station "                   << std::endl;
         WifiMacHeader hdr(WIFI_MAC_QOSDATA);
         hdr.SetAddr1(GetWifiRemoteStationManager(m_linkId)
                          ->GetAffiliatedStaAddress(staIt->address)
@@ -1304,6 +1305,7 @@ RrMultiUserScheduler::TryChannelSounding(void)
                     if (m_candidatesCs.size() == 0)
                     {
                         type = HeMimoControlHeader::SU;
+                        std::cout << "STA  is the only candidate for channel sounding, using SU feedback" << std::endl;
                         WifiMacHeader hdr(WIFI_MAC_QOSDATA);
                         hdr.SetAddr1(m_apMac->GetAddress());
                         hdr.SetAddr2(staIt->address);
@@ -1519,6 +1521,10 @@ RrMultiUserScheduler::TryPollingPhase11bf()
         heConfiguration->GetGuardInterval().GetNanoSeconds());
     txParamsPollingFrame.m_acknowledgment = std::unique_ptr<WifiAcknowledgment>(new WifiNoAck());
     txParamsPollingFrame.m_protection = std::unique_ptr<WifiProtection>(new WifiNoProtection());
+
+    txParamsPollingFrame.m_acknowledgment->acknowledgmentTime = Seconds(0);
+    // Also pre-initialise protection time for the same reason:
+    txParamsPollingFrame.m_protection->protectionTime = Seconds(0);
 
     //  Check capability of DL MU  --------------------------------------------------
     AcIndex primaryAc = m_edca->GetAccessCategory();
@@ -1855,6 +1861,7 @@ RrMultiUserScheduler::TryPollingPhase11bf()
     }
     else
     {
+        std::cout << "No station can be scheduled in the polling phase, performing sensing timeout" << std::endl;
         SensingTimeout();
         return NO_TX;
     }
@@ -2233,6 +2240,7 @@ RrMultiUserScheduler::TryNDPASoundingPhase11bf(void)
         if (m_candidatesCs.size() == 0 || m_candidatesCs.size() == 1)
         {
             type = HeMimoControlHeader::SU;
+            std::cout << "SU Sounding Station:" << std::endl;
             WifiMacHeader hdr(WIFI_MAC_QOSDATA);
             hdr.SetAddr1(m_apMac->GetAddress());
             hdr.SetAddr2(staIt->first->address);

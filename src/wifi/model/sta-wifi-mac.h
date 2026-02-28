@@ -215,6 +215,11 @@ class StaWifiMac : public InfrastructureWifiMac
     void Enqueue(Ptr<Packet> packet, Mac48Address to) override;
     bool CanForwardPacketsTo(Mac48Address to) const override;
 
+
+    void StartCfPeriod();
+
+    void StopCfPeriod();
+
     /**
      * \param phys the physical layers attached to this MAC.
      */

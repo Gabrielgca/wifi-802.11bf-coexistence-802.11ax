@@ -111,7 +111,7 @@ InfrastructureWifiMac::SetMac(const Ptr<WifiMac> mac)
 */
 
 bool
-InfrastructureWifiMac::IsCfPeriod(uint8_t linkId = 0U) const
+InfrastructureWifiMac::IsCfPeriod(uint8_t linkId) const
 {
     NS_LOG_FUNCTION(this);
     return (GetPcfSupported() && m_cfpStart.IsStrictlyPositive());
@@ -162,14 +162,17 @@ void
 InfrastructureWifiMac::StartCfPeriod()
 {
     NS_LOG_FUNCTION(this);
+    std::cout << "Start CF period for " << GetAddress() << " at " << Simulator::Now() << std::endl;
     m_cfpStart = Simulator::Now();
     m_cfpForeshortening = NanoSeconds(0);
+    // Simulator::Schedule(GetCfpMaxDuration(), &InfrastructureWifiMac::StopCfPeriod, this);
 }
 
 void
 InfrastructureWifiMac::StopCfPeriod()
 {
     NS_LOG_FUNCTION(this);
+    std::cout << "Stop CF period for " << GetAddress() << " at " << Simulator::Now() << std::endl;
     m_cfpStart = NanoSeconds(0);
     m_cfpForeshortening = NanoSeconds(0);
 }
@@ -201,11 +204,11 @@ InfrastructureWifiMac::EndTxNoAck(uint8_t linkId)
     if (m_currentPacket->GetHeader(0).IsBeacon())
     {
         // StartCfPeriod();
-        m_currentTxop->EndTxNoAck(linkId, m_currentMpdu);
+        m_currentTxop->EndTxNoAck(linkId);
     }
     else if (m_currentPacket->GetHeader(0).IsCfEnd())
     {
-        m_currentTxop->EndTxNoAck(linkId, m_currentMpdu, false);
+        m_currentTxop->EndTxNoAck(linkId);
     }
     if (!IsCfPeriod(linkId))
     {

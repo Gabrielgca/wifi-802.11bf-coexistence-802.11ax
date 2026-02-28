@@ -790,7 +790,7 @@ WifiHelper::Install(const WifiPhyHelper& phyHelper,
             auto heConfiguration = m_heConfig.Create<HeConfiguration>();
             device->SetHeConfiguration(heConfiguration);
         }
-        if (m_standard >= WIFI_STANDARD_80211be)
+        if (m_standard >= WIFI_STANDARD_80211be && m_standard != WIFI_STANDARD_80211bf) // 802.11be without 802.11ax capabilities is not allowed    
         {
             auto ehtConfiguration = m_ehtConfig.Create<EhtConfiguration>();
             device->SetEhtConfiguration(ehtConfiguration);

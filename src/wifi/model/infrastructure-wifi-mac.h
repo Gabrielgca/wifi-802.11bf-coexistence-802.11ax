@@ -106,7 +106,12 @@ class InfrastructureWifiMac : public WifiMac
      * \return true if Simulator::Now is in CF period,
      *         false otherwise
      */
-    bool IsCfPeriod(uint8_t linkId) const;
+    bool IsCfPeriod(uint8_t linkId = 0U) const;
+
+    // In InfrastructureWifiMac (shared by both AP and STA):
+    bool IsInCfp() const { return m_inCfp; }
+
+    Time GetCfpStart() const { return m_cfpStart; }
     /**
      * \return the maximum duration for the CF period.
      */
@@ -175,6 +180,12 @@ class InfrastructureWifiMac : public WifiMac
     */
     bool m_muMimoSupported; //!< MU-OFDMA supported
     bool m_muSensingSupported; //!< MU-OFDMA supported
+
+        // Set in StartCfPeriod(), cleared in StopCfPeriod().
+    bool m_inCfp;
+
+    // Safety-timeout event: fires EndSensing() if sensing never completes cleanly.
+    EventId m_cfpTimeoutEvent;
 
   protected:
     /*

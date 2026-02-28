@@ -487,6 +487,7 @@ WifiNetDevice::Send(Ptr<Packet> packet, const Address& dest, uint16_t protocolNu
     packet->AddHeader(llc);
 
     m_mac->NotifyTx(packet);
+    std::cout << "WifiNetDevice::Send: packet=" << packet << " to=" << realTo << std::endl;
     m_mac->Enqueue(packet, realTo);
     return true;
 }

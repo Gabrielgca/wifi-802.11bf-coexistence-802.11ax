@@ -650,7 +650,7 @@ EhtFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                                                    this);
         }
     }
-
+    std::cout << "1 HeFrameExchangeManager: ReceiveMpdu" << std::endl;
     HeFrameExchangeManager::ReceiveMpdu(mpdu, rxSignalInfo, txVector, inAmpdu);
 }
 

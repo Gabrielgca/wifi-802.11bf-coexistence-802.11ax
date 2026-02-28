@@ -246,6 +246,7 @@ QosFrameExchangeManager::StartTransmission(Ptr<QosTxop> edca, Time txopDuration)
         if (!StartFrameExchange(m_edca, m_edca->GetRemainingTxop(m_linkId), false))
         {
             NS_LOG_DEBUG("Not enough remaining TXOP time");
+            std::cout << "SendCfEndIfNeeded Not enough remaining TXOP time on link " << +m_linkId << std::endl;
             return SendCfEndIfNeeded();
         }
 
@@ -724,6 +725,7 @@ QosFrameExchangeManager::UpdateNav(Ptr<const WifiPsdu> psdu, const WifiTxVector&
     if (psdu->GetHeader(0).IsCfEnd())
     {
         NS_LOG_DEBUG("Received CF-End, resetting NAV");
+        std::cout << "Update NAV: Received CF-End, resetting NAV on link " << +m_linkId << std::endl;
         NavResetTimeout();
         return;
     }
@@ -797,7 +799,7 @@ QosFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
         // the received data frame has been processed
         return;
     }
-
+    std::cout << "FrameExchangeManager Received " << hdr.GetTypeString() << " from=" << hdr.GetAddr2() << std::endl;
     return FrameExchangeManager::ReceiveMpdu(mpdu, rxSignalInfo, txVector, inAmpdu);
 }
 

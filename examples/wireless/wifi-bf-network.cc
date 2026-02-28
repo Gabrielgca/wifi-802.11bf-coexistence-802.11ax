@@ -1274,7 +1274,7 @@ main(int argc, char* argv[])
     multipleBss = true;
     bool downlink{true};
     uint64_t cfpMaxDurationMs = 50;   // milliseconds
-    uint64_t sensingInterval = 100;    // milliseconds
+    uint64_t sensingInterval = 120.4;    // milliseconds
     uint64_t sensingIntervalType = 0; // 0: Constant, 1: Poisson-distributed
     double simulationTime = 5.0;      // seconds
     radius = 2.0;                     // meters
@@ -1420,14 +1420,14 @@ main(int argc, char* argv[])
 
     if (frequency == 6)
     {
-        wifi.SetStandard(WIFI_STANDARD_80211bf);
+        wifi.SetStandard(WIFI_STANDARD_80211ax);
         ctrlRate = StringValue(ossDataMode.str());
         channelStr += "BAND_6GHZ, 0}";
         Config::SetDefault("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue(48));
     }
     else if (frequency == 5)
     {
-        wifi.SetStandard(WIFI_STANDARD_80211bf);
+        wifi.SetStandard(WIFI_STANDARD_80211ax);
         std::ostringstream ossControlMode;
         ossControlMode << "OfdmRate" << nonHtRefRateMbps << "Mbps";
         ctrlRate = StringValue(ossControlMode.str());
@@ -1435,7 +1435,7 @@ main(int argc, char* argv[])
     }
     else if (frequency == 2.4)
     {
-        wifi.SetStandard(WIFI_STANDARD_80211bf);
+        wifi.SetStandard(WIFI_STANDARD_80211ax);
         std::ostringstream ossControlMode;
         ossControlMode << "ErpOfdmRate" << nonHtRefRateMbps << "Mbps";
         ctrlRate = StringValue(ossControlMode.str());
@@ -1732,9 +1732,25 @@ main(int argc, char* argv[])
         macAp_net2.SetType("ns3::ApWifiMac",
             "Ssid", SsidValue(ssid),
                                 "WiFiSensingSupported",
-                                BooleanValue(false),
+                                BooleanValue(true),
                               "QosSupported",
                               BooleanValue(true),
+                              "CfpMaxDuration",
+                              TimeValue(MicroSeconds(cfpMaxDurationMs * 1024)),
+                              "CtsToSelfSupported",
+                              BooleanValue(enableCTStoSelf),
+                              "ChannelSoundingSupported",
+                              BooleanValue(enableChannelSounding),
+                              "QosSupported",
+                              BooleanValue(true),
+                              "BeaconGeneration",
+                              BooleanValue(true),
+                              "SensingPriority",
+                              UintegerValue(sensingPriority),
+                              "SensingInterval",
+                              TimeValue(MilliSeconds(sensingInterval)),
+                              "SensingIntervalType",
+                              UintegerValue(sensingIntervalType),
                               "SensingPriority",
                               UintegerValue(sensingPriority)
         );

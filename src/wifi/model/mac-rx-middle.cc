@@ -294,10 +294,11 @@ MacRxMiddle::Receive(Ptr<const WifiMpdu> mpdu, uint8_t linkId)
     const WifiMacHeader* hdr = &mpdu->GetOriginal()->GetHeader();
     NS_ASSERT(hdr->IsData() || hdr->IsMgt());
     // Attempt : Additional condition for PCF
-     std::cout << "MacRxMiddle::Receive: Received MPDU with header: " << *hdr << " on link: " << +linkId << std::endl;
+     std::cout << "MacRxMiddle::Receive: Received MPDU with header: " << *hdr << " on link: " << +linkId << "\n\n\n" << std::endl;
     if (!m_pcfCallback.IsNull())
     {
         NS_LOG_INFO("Send Next CF frame after : " << mpdu);
+        // std::cout << "Send Next CF frame after : " << mpdu << std::endl;
         m_pcfCallback(linkId);
     }
 

@@ -393,11 +393,11 @@ FrameExchangeManager::StartTransmission(Ptr<Txop> dcf, uint16_t allowedWidth)
     txParams.AddMpdu(mpdu);
     UpdateTxDuration(mpdu->GetHeader().GetAddr1(), txParams);
 
-    if (!IsInfShareInfoCallbackNull())
-    {
-        DequeueMpdu(mpdu);
-        m_InfShareInfoCallback(dcf, mpdu);
-    }
+    // if (!IsInfShareInfoCallbackNull())
+    // {
+    //     DequeueMpdu(mpdu);
+    //     // m_InfShareInfoCallback(dcf, mpdu);
+    // }
 
     if (mpdu->GetHeader().IsNdpa() || mpdu->GetHeader().IsNdp() || mpdu->GetHeader().IsCfEnd())
     {
@@ -523,7 +523,7 @@ FrameExchangeManager::SendMpdu()
     Time txDuration = m_phy->CalculateTxDuration(GetPsduSize(m_mpdu, m_txParams.m_txVector),
                                                  m_txParams.m_txVector,
                                                  m_phy->GetPhyBand());
-
+    std::cout << "Sending " << m_mpdu->GetHeader() << " duration=" << txDuration.As(Time::US) << std::endl;
     NS_ASSERT(m_txParams.m_acknowledgment);
 
     if (m_txParams.m_acknowledgment->method == WifiAcknowledgment::NONE)
@@ -535,10 +535,10 @@ FrameExchangeManager::SendMpdu()
             // m_dcf->NotifyChannelReleasedForPCF(m_linkId);
             // m_dcf = nullptr;
         }
-        else
-        {
-            Simulator::Schedule(txDuration, &FrameExchangeManager::TransmissionSucceeded, this);
-        }
+        
+        
+        Simulator::Schedule(txDuration, &FrameExchangeManager::TransmissionSucceeded, this);
+        
 
         // Simulator::Schedule(txDuration, &FrameExchangeManager::TransmissionSucceeded, this);
 
@@ -1231,6 +1231,7 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
                                                           rxSignalInfo,
                                                           txVector);
             }
+            std::cout << "FRAME EXCHANGE: " << psdu->GetHeader(0) << " SNR: " << 10.0 * std::log10(rxSignalInfo.snr) << std::endl;
             ReceiveMpdu(*(psdu->begin()), rxSignalInfo, txVector, perMpduStatus.empty());
         }
         else
@@ -1280,6 +1281,7 @@ FrameExchangeManager::UpdateNav(Ptr<const WifiPsdu> psdu, const WifiTxVector& tx
 {
     NS_LOG_FUNCTION(this << psdu << txVector);
 
+    std::cout << "FRAME EXCHANGE: Update NAV based on " << psdu->GetHeader(0) << std::endl;
     if (!psdu->HasNav())
     {
         return;
@@ -1302,7 +1304,7 @@ FrameExchangeManager::UpdateNav(Ptr<const WifiPsdu> psdu, const WifiTxVector& tx
     {
         m_navEnd = navEnd;
         NS_LOG_DEBUG("Updated NAV=" << m_navEnd);
-
+        std::cout << "FRAME EXCHANGE: Updated NAV=" << m_navEnd << std::endl;
         // A STA that used information from an RTS frame as the most recent basis to update
         // its NAV setting is permitted to reset its NAV if no PHY-RXSTART.indication
         // primitive is received from the PHY during a NAVTimeout period starting when the
@@ -1325,7 +1327,7 @@ FrameExchangeManager::UpdateNav(Ptr<const WifiPsdu> psdu, const WifiTxVector& tx
         }
     }
     NS_LOG_DEBUG("Current NAV=" << m_navEnd);
-
+    std::cout << "FRAME EXCHANGE: Current NAV=" << m_navEnd << std::endl;
     m_channelAccessManager->NotifyNavStartNow(duration);
 }
 

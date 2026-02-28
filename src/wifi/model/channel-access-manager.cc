@@ -426,6 +426,7 @@ ChannelAccessManager::NeedBackoffUponAccess(Ptr<Txop> txop)
      *    with that AC has now become non-empty and any other transmit queues
      *    associated with that AC are empty; the medium is busy on the primary channel
      */
+    std::cout << "IsBusy() : " << IsBusy() << " HasFramesToTransmit : " << txop->HasFramesToTransmit(m_linkId) << " AccessStatus : " << txop->GetAccessStatus(m_linkId) << " BackoffSlots : " << txop->GetBackoffSlots(m_linkId) << std::endl;  
     if (!txop->HasFramesToTransmit(m_linkId) && txop->GetAccessStatus(m_linkId) != Txop::GRANTED &&
         txop->GetBackoffSlots(m_linkId) == 0)
     {
@@ -1058,7 +1059,7 @@ ChannelAccessManager::NotifyNavStartNow(Time duration)
     NS_LOG_FUNCTION(this << duration);
     NS_LOG_DEBUG("nav start for=" << duration);
     UpdateBackoff();
-    //std::cout << "NAV starts at " << Simulator::Now() << " and end at " << (Simulator::Now() + duration).As(Time::NS) << "ns" << std::endl;
+    std::cout << "aaaaaa NAV starts at " << Simulator::Now() << " and end at " << (Simulator::Now() + duration).As(Time::NS) << "ns" << std::endl;
     m_lastNavEnd = std::max(m_lastNavEnd, Simulator::Now() + duration);
 }
 
@@ -1182,27 +1183,27 @@ Private Functions and Attributes for Channel Access Manager
 *************************************
 */
 
-void
-ChannelAccessManager::DoGrantPcfAccess(Ptr<Txop> txop)
-{
-    NS_LOG_INFO(Simulator::Now() << " Channel access granted for PCF: "
-                                 << txop->m_mac->GetAddress());
-    NS_LOG_FUNCTION(this << txop);
-    // NS_LOG_DEBUG("pcf access granted");
-    // txop->NotifyAccessGranted(m_linkId);
-}
+// void
+// ChannelAccessManager::DoGrantPcfAccess(Ptr<Txop> txop)
+// {
+//     NS_LOG_INFO(Simulator::Now() << " Channel access granted for PCF: "
+//                                  << txop->m_mac->GetAddress());
+//     NS_LOG_FUNCTION(this << txop);
+//     // NS_LOG_DEBUG("pcf access granted");
+//     // txop->NotifyAccessGranted(m_linkId);
+// }
 
-bool
-ChannelAccessManager::DoNavStartNowPCF(Time duration)
-{
-    NotifyNavStartNow(duration);
-    Time newNavEnd = Simulator::Now() + duration;
-    if (newNavEnd > m_lastNavEnd)
-    {
-        m_lastNavEnd = newNavEnd;
-        return true;
-    }
-    return false;
-}
+// bool
+// ChannelAccessManager::DoNavStartNowPCF(Time duration)
+// {
+//     NotifyNavStartNow(duration);
+//     Time newNavEnd = Simulator::Now() + duration;
+//     if (newNavEnd > m_lastNavEnd)
+//     {
+//         m_lastNavEnd = newNavEnd;
+//         return true;
+//     }
+//     return false;
+// }
 
 } // namespace ns3

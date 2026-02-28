@@ -942,7 +942,7 @@ HtFrameExchangeManager::SendPsduWithProtection(Ptr<WifiPsdu> psdu, WifiTxParamet
             mpdu->SetInFlight(m_linkId);
         }
     }
-
+    std::cout << "HtFrameExchangeManager::SendPsduWithProtection: " << std::endl;
     StartProtection(m_txParams);
 }
 
@@ -1637,7 +1637,7 @@ HtFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
         {
             // a Block Ack agreement has been established
             NS_LOG_DEBUG("Received from=" << hdr.GetAddr2() << " (" << *mpdu << ")");
-
+            std::cout << "2 Notify BA manager about received MPDU with seqno=" << hdr.GetSequenceNumber() << std::endl;
             GetBaManager(tid)->NotifyGotMpdu(mpdu);
 
             if (!inAmpdu && hdr.GetQosAckPolicy() == WifiMacHeader::NORMAL_ACK)

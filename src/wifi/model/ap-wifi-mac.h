@@ -241,6 +241,18 @@ class ApWifiMac : public InfrastructureWifiMac
     *************************************
     */
 
+    void StartCfPeriod();
+
+    void StopCfPeriod();
+
+    // Sends a CF-End broadcast frame directly via m_beaconTxop,
+    // then calls StopCfPeriod() after the frame is on air.
+    void SendCfEnd(uint8_t linkId);
+
+    // Called after CF-End transmission is complete.
+    void OnCfEndSent(uint8_t linkId);
+
+
     /**
      * Send a CF-Poll packet to the next polling STA.
      */
@@ -650,6 +662,12 @@ class ApWifiMac : public InfrastructureWifiMac
                            //!< AP
     bool m_SensingAppBegin = false; //!< Flag to indicate that the sensing application has started
     bool m_waitingCSIReport = false; //!< Flag to indicate that the AP is waiting for a CSI report
+
+    // Set in StartCfPeriod(), cleared in StopCfPeriod().
+    bool m_inCfp;
+
+    // Safety-timeout event: fires EndSensing() if sensing never completes cleanly.
+    EventId m_cfpTimeoutEvent;
     Time m_sensingInterval;              //!< Rate of sensing in the simulation
     /// store value and timestamp for each Buffer Status Report
     struct BsrType

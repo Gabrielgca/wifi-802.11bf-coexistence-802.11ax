@@ -384,4 +384,6 @@ if [ "$option" == "volumetricVideoStreamingScenario" ]; then
 fi
 
 
-# ./ns3 run "examples/wireless/wifi-bf-network.cc --nBss=1 --nStations=10 --ratioStasSensing=0.5 --sensingPriority=2 --seed=347 --scenario=6 --simulationTime=60.0" 
+# NS_LOG="ApWifiMac=level_info|prefix_time:StaWifiMac=level_info|prefix_time:ChannelAccessManager=level_info|prefix_time:FrameExchangeManager=level_info|prefix_time:HeFrameExchangeManager=level_info|prefix_time:InfrastructureWifiMac=level_info|prefix_time:WifiPhy=level_info|prefix_time" ./ns3 run "examples/wireless/wifi-bf-network.cc --nBss=2 --nAxBss=1 --nStations=4 --ratioStasSensing=0.5 --sensingPriority=1 --seed=347 --scenario=6 --simulationTime=3.0" > log.out 2>&1
+
+# ./ns3 run "examples/wireless/wifi-bf-network.cc --nBss=1 --nBfBss=1 --nStations=2 --ratioStasSensing=1 --sensingPriority=1 --seed=347 --scenario=6 --simulationTime=3.0" > log2.out 2>&1

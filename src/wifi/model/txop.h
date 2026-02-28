@@ -479,7 +479,7 @@ class Txop : public Object
      * Event handler when a transmission that
      * does not require an Ack has completed.
      */
-    virtual void EndTxNoAck(uint8_t linkId, Ptr<const WifiMpdu> mpdu, bool IsCfPeriod = false);
+    virtual void EndTxNoAck(uint8_t linkId);
     /**
      * Cancel the transmission.
      */
@@ -549,7 +549,7 @@ class Txop : public Object
      *
      * \param linkId the ID of the given link
      */
-    void NotifyChannelReleasedForPCF(uint8_t linkId, bool IsBfSensing, Time duration);
+    void NotifyChannelReleasedForPCF(uint8_t linkId);
 
     Time GetPcfRemainingDuration(uint8_t linkId = 0U);
 

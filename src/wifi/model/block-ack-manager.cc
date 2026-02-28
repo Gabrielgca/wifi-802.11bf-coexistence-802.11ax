@@ -641,6 +641,8 @@ BlockAckManager::NotifyGotMpdu(Ptr<const WifiMpdu> mpdu)
     {
         return;
     }
+    std::cout << "1 notifyReveivedMpdu: originator=" << originator << " tid=" << +tid
+              << " seq=" << mpdu->GetHeader().GetSequenceNumber() << std::endl;
     it->second.NotifyReceivedMpdu(mpdu);
 }
 

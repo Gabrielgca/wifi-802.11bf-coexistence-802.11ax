@@ -742,6 +742,7 @@ template <typename TxopType>
 void
 ChannelAccessManagerTest<TxopType>::AddNavStart(uint64_t at, uint64_t duration)
 {
+    std::cout << "AddNavStart at " << at << " duration " << duration << std::endl;
     Simulator::Schedule(MicroSeconds(at) - Now(),
                         &ChannelAccessManager::NotifyNavStartNow,
                         m_ChannelAccessManager,
