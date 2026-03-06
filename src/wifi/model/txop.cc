@@ -662,6 +662,13 @@ Txop::NotifyChannelReleased(uint8_t linkId)
     GetLink(linkId).access = NOT_REQUESTED;
     GenerateBackoff(linkId);
     std::cout << "HasFramesToTransmit(linkId)=" << HasFramesToTransmit(linkId) << std::endl;
+    Ptr<const WifiMpdu> mpdu = m_queue->Peek();
+    if (mpdu)
+    {
+        std::cout << "Header: " << mpdu->GetHeader()
+                << " PayloadSize: " << mpdu->GetPacketSize()
+                << std::endl;
+    }
     if (HasFramesToTransmit(linkId))
     {
         Simulator::ScheduleNow(&Txop::RequestAccess, this, linkId);

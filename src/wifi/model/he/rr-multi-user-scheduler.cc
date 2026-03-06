@@ -187,6 +187,14 @@ RrMultiUserScheduler::SelectTxFormat()
     TxFormat txformatCs;
 
     Ptr<const WifiMpdu> mpdu = m_edca->PeekNextMpdu(m_linkId);
+    if (mpdu)
+    {
+        std::cout << "mpdu" << mpdu->GetPacket() << std::endl;
+        std::cout << "rr-multi-user-scheduler SelectTxFormat: next MPDU for link " << +m_linkId << " header: " << mpdu->GetHeader() << std::endl;
+    }
+    else {
+        std::cout << "rr-multi-user-scheduler SelectTxFormat: no MPDU for link " << +m_linkId << std::endl;
+    }
     // if (mpdu)
     if (IsPCFEnabled() && m_enableMuMimo)
     {
@@ -200,37 +208,49 @@ RrMultiUserScheduler::SelectTxFormat()
                 {
                     if (GetLastTxFormat(0U) == BF_POLL_DL_TX)
                     {
+
                         return TryNDPASoundingPhase11bf();
                     }
                     else if (GetLastTxFormat(0U) == BF_NDPA_SOUNDING_TX_SU)
                     {
                         if (m_nextSUSounding)
                         {
-                            return TryNDPASoundingPhase11bf();
+                            TxFormat txFormat = TryNDPASoundingPhase11bf();
+                            std::cout << "txFormat returned by TryNDPASoundingPhase11bf() : " << txFormat << std::endl;
+                            return txFormat;
                         }
                         else
                         {
-                            return TryPollingPhase11bf();
+                            TxFormat txFormat = TryPollingPhase11bf();
+                            std::cout << "txFormat returned by TryPollingPhase11bf() : " << txFormat << std::endl;
+                            return txFormat;
                         }
                     }
                 }
                 else if (GetLastTxFormat(0U) == BF_POLL_DL_TX)
                 {
-                    return TryNDPASoundingPhase11bf();
+                    TxFormat txFormat = TryNDPASoundingPhase11bf();
+                    std::cout << "txFormat returned by TryNDPASoundingPhase11bf() : " << txFormat << std::endl;
+                    return txFormat;
                 }
             }
-            return TryPollingPhase11bf();
+            TxFormat txFormat = TryPollingPhase11bf();
+            std::cout << "txFormat returned by TryPollingPhase11bf() : " << txFormat << std::endl;
+            return txFormat;
         }
     }
 
     if (mpdu && !m_apMac->GetHeSupported(mpdu->GetHeader().GetAddr1()))
     {
+        std::cout << "Next MPDU is for a non-HE station, sending SU_TX SU PPDU" << std::endl;
         return SU_TX;
     }
 
     if (m_enableUlOfdma && m_enableBsrp && (GetLastTxFormat(m_linkId) == DL_MU_TX || !mpdu))
     {
         TxFormat txFormat = TrySendingBsrpTf();
+
+        std::cout << "txFormat returned by TrySendingBsrpTf() : " << txFormat << std::endl;
 
         if (txFormat != DL_MU_TX)
         {
@@ -247,7 +267,7 @@ RrMultiUserScheduler::SelectTxFormat()
             return txFormat;
         }
     }
-
+    std::cout << "TrySendingDlMuPpdu because no other TxFormat was selected" << std::endl;
     return TrySendingDlMuPpdu();
 }
 
@@ -387,7 +407,7 @@ RrMultiUserScheduler::TrySendingBsrpTf()
 
     m_trigger = CtrlTriggerHeader(TriggerFrameType::BSRP_TRIGGER, txVector);
     txVector.SetGuardInterval(m_trigger.GetGuardInterval());
-
+    std::cout << "TrySendingBsrpTf: selected stations for BSRP Trigger Frame: " << std::endl;
     auto item = GetTriggerFrame(m_trigger, m_linkId);
     m_triggerMacHdr = item->GetHeader();
 
@@ -505,7 +525,7 @@ RrMultiUserScheduler::TrySendingBasicTf()
 
     m_trigger = CtrlTriggerHeader(TriggerFrameType::BASIC_TRIGGER, txVector);
     txVector.SetGuardInterval(m_trigger.GetGuardInterval());
-
+    std::cout << "TrySendingBasicTf: selected stations for BASIC Trigger Frame: " << std::endl;
     auto item = GetTriggerFrame(m_trigger, m_linkId);
     m_triggerMacHdr = item->GetHeader();
 
@@ -1282,6 +1302,7 @@ RrMultiUserScheduler::TryChannelSounding(void)
                              1});
                         bfTfCtrlHeader =
                             CtrlTriggerHeader(TriggerFrameType::BFRP_TRIGGER, txVector);
+                        std::cout << "TryChannelSounding: selected stations for BFRP Trigger Frame: " << std::endl;
                         mpduTf = GetTriggerFrame(bfTfCtrlHeader, m_linkId);
                         txParamsSendTf = txParamsCtrlFrame;
                         if (!GetHeFem(m_linkId)->TryAddMpdu(mpduTf,
@@ -1522,9 +1543,9 @@ RrMultiUserScheduler::TryPollingPhase11bf()
     txParamsPollingFrame.m_acknowledgment = std::unique_ptr<WifiAcknowledgment>(new WifiNoAck());
     txParamsPollingFrame.m_protection = std::unique_ptr<WifiProtection>(new WifiNoProtection());
 
-    txParamsPollingFrame.m_acknowledgment->acknowledgmentTime = Seconds(0);
-    // Also pre-initialise protection time for the same reason:
-    txParamsPollingFrame.m_protection->protectionTime = Seconds(0);
+    // txParamsPollingFrame.m_acknowledgment->acknowledgmentTime = Seconds(0);
+    // // Also pre-initialise protection time for the same reason:
+    // txParamsPollingFrame.m_protection->protectionTime = Seconds(0);
 
     //  Check capability of DL MU  --------------------------------------------------
     AcIndex primaryAc = m_edca->GetAccessCategory();

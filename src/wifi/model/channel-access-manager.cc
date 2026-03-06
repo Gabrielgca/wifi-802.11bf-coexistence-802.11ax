@@ -384,6 +384,10 @@ ChannelAccessManager::IsBusy() const
 {
     NS_LOG_FUNCTION(this);
     Time now = Simulator::Now();
+
+    std::cout << "IsBusy() check at " << now << " with lastRx.end " << m_lastRx.end
+              << " lastTxEnd " << m_lastTxEnd << " lastNavEnd " << m_lastNavEnd
+              << " lastBusyEnd primary " << m_lastBusyEnd.at(WIFI_CHANLIST_PRIMARY) << std::endl;
     return (m_lastRx.end > now)    // RX
            || (m_lastTxEnd > now)  // TX
            || (m_lastNavEnd > now) // NAV busy
@@ -489,6 +493,7 @@ ChannelAccessManager::RequestAccess(Ptr<Txop> txop, bool IsCfPeriod)
     // {
     //     m_phy->NotifyMonitorChannelAccess(txop->m_mac->GetAddress(), Simulator::Now(), false);
     // }
+    // std::cout << "Requesting channel access for DCF: " << txop->m_mac->GetAddress() << std::endl;
 
     UpdateBackoff();
     NS_ASSERT(txop->GetAccessStatus(m_linkId) != Txop::REQUESTED);
@@ -503,9 +508,24 @@ ChannelAccessManager::DoGrantDcfAccess()
     NS_LOG_FUNCTION(this);
     uint32_t k = 0;
     Time now = Simulator::Now();
+    // std::cout << "DoGrantDcfAccess at " << now << std::endl;
     for (auto i = m_txops.begin(); i != m_txops.end(); k++)
     {
         Ptr<Txop> txop = *i;
+
+        // if (txop->IsQosTxop())
+        // {
+        //     Ptr<QosTxop> qosTxop = StaticCast<QosTxop>(txop);
+        //     std::cout << "GetAccessCategory(m_linkId) : " << static_cast<uint32_t>(qosTxop->GetAccessCategory()) << std::endl;
+        // }
+        //     std::cout << "Checking Txop " << k << " txop->GetAccessStatus(m_linkId) == Txop::REQUESTED: " << (txop->GetAccessStatus(m_linkId) == Txop::REQUESTED) << " BackoffEnd=" << GetBackoffEndFor(txop) << std::endl;
+        // std::cout << "txop->GetAccessStatus(m_linkId) : " << txop->GetAccessStatus(m_linkId) << 
+        // " txop->IsQosTxop() : " << txop->IsQosTxop() << "\n (!txop->IsQosTxop() || !StaticCast<QosTxop>(txop)->EdcaDisabled(m_linkId)) : " 
+        // << (!txop->IsQosTxop() || !StaticCast<QosTxop>(txop)->EdcaDisabled(m_linkId)) 
+        // << "\n now : " << (now) << std::endl;
+
+        // std::cout << "GetBacoffeEndFor(txop) : " << GetBackoffEndFor(txop) << " now : " << now << std::endl;
+        
         if (txop->GetAccessStatus(m_linkId) == Txop::REQUESTED &&
             (!txop->IsQosTxop() || !StaticCast<QosTxop>(txop)->EdcaDisabled(m_linkId)) &&
             GetBackoffEndFor(txop) <= now)
@@ -516,6 +536,7 @@ ChannelAccessManager::DoGrantDcfAccess()
              */
             NS_LOG_DEBUG("dcf " << k << " needs access. backoff expired. access granted. slots="
                                 << txop->GetBackoffSlots(m_linkId));
+            // std::cout << "################################################################### ACCESS GRANTED ###################################################################" << std::endl;
             i++; // go to the next item in the list.
             k++;
             std::vector<Ptr<Txop>> internalCollisionTxops;
@@ -550,16 +571,19 @@ ChannelAccessManager::DoGrantDcfAccess()
             // idle primary channel and pass its width to the FrameExchangeManager, so that
             // the latter can transmit PPDUs of the appropriate width (see Section 10.23.2.5
             // of IEEE 802.11-2020).
+            // std::cout << "Trying to start transmission for DCF: " << txop->m_mac->GetAddress() << std::endl;
             auto interval = (m_phy->GetPhyBand() == WIFI_PHY_BAND_2_4GHZ)
                                 ? GetSifs() + 2 * GetSlot()
                                 : m_phy->GetPifs();
             auto width = (m_phy->GetOperatingChannel().IsOfdm() && m_phy->GetChannelWidth() > 20)
                              ? GetLargestIdlePrimaryChannel(interval, now)
                              : m_phy->GetChannelWidth();
+            // std::cout << "Largest idle primary channel width for DCF: " << width << std::endl;
             if (m_feManager->StartTransmission(txop, width))
             {
                 NS_LOG_INFO(Simulator::Now()
                             << " Channel access granted for DCF: " << txop->m_mac->GetAddress());
+                // std::cout << "Channel access granted for DCF: " << txop->m_mac->GetAddress() << std::endl;
                 for (auto& collidingTxop : internalCollisionTxops)
                 {
                     m_feManager->NotifyInternalCollision(collidingTxop);
@@ -568,12 +592,17 @@ ChannelAccessManager::DoGrantDcfAccess()
             }
             else
             {
+                // std::cout << "Channel access NOT granted for DCF: " << txop->m_mac->GetAddress() << std::endl;
                 // reset the current state to the EDCAF that won the contention
                 // but did not transmit anything
                 i--;
                 k = std::distance(m_txops.begin(), i);
             }
         }
+        // else
+        // {
+        //     std::cout << "Txop " << k << " does not need access or backoff not expired. AccessStatus=" << txop->GetAccessStatus(m_linkId) << " BackoffEnd=" << GetBackoffEndFor(txop) << std::endl;
+        // }
         i++;
     }
 }
@@ -582,6 +611,7 @@ void
 ChannelAccessManager::AccessTimeout()
 {
     NS_LOG_FUNCTION(this);
+    std::cout << "Access timeout at " << Simulator::Now() << std::endl;
     UpdateBackoff();
     DoGrantDcfAccess();
     DoRestartAccessTimeoutIfNeeded();
@@ -608,6 +638,8 @@ ChannelAccessManager::GetAccessGrantStart(bool ignoreNav) const
     Time usingOtherEmlsrLinkAccessStart =
         (m_usingOtherEmlsrLink ? Simulator::Now() : m_lastUsingOtherEmlsrLinkEnd) + sifs;
     Time accessGrantedStart;
+
+    // std::cout << "busyAccessStart : " << busyAccessStart << " navAccessStart : " << navAccessStart << " txAccessStart : " << txAccessStart << " ackTimeoutAccessStart : " << ackTimeoutAccessStart << " ctsTimeoutAccessStart : " << ctsTimeoutAccessStart << " switchingAccessStart : " << switchingAccessStart << " usingOtherEmlsrLinkAccessStart : " << usingOtherEmlsrLinkAccessStart << std::endl;
     if (ignoreNav)
     {
         accessGrantedStart = std::max({rxAccessStart,
@@ -650,7 +682,13 @@ ChannelAccessManager::GetBackoffStartFor(Ptr<Txop> txop)
         std::max({txop->GetBackoffStart(m_linkId),
                   GetAccessGrantStart() + (txop->GetAifsn(m_linkId) * GetSlot())});
     NS_LOG_DEBUG("Backoff start: " << mostRecentEvent.As(Time::US));
-
+    // std::cout << "********txop->GetBackoffStart(m_linkId) : " << txop->GetBackoffStart(m_linkId) << " GetAccessGrantStart() + (txop->GetAifsn(m_linkId) * GetSlot()) : " << GetAccessGrantStart() + (txop->GetAifsn(m_linkId) * GetSlot()) << std::endl;
+    // std::cout << "txop->GetBackoffStart(0U) : " << txop->GetBackoffStart(0U) << std::endl;
+    // std::cout << "txop->GetBackoffStart(m_linkId) : " << txop->GetBackoffStart(m_linkId) << std::endl;
+    // std::cout << "GetAccessGrantStart() : " << GetAccessGrantStart() << std::endl;
+    // std::cout << "txop->GetAifsn(m_linkId): " << static_cast<int>(txop->GetAifsn(m_linkId))<< std::endl;
+    // std::cout << "GetSlot() : " << GetSlot() << std::endl;
+    // std::cout << "txop->GetAifsn(0U): " << static_cast<int>(txop->GetAifsn(0U))<< std::endl;
     return mostRecentEvent;
 }
 
@@ -658,6 +696,7 @@ Time
 ChannelAccessManager::GetBackoffEndFor(Ptr<Txop> txop)
 {
     NS_LOG_FUNCTION(this << txop);
+    // std::cout << "txop->GetBackoffSlots(m_linkId) : " << txop->GetBackoffSlots(m_linkId) << std::endl;
     Time backoffEnd = GetBackoffStartFor(txop) + (txop->GetBackoffSlots(m_linkId) * GetSlot());
     NS_LOG_DEBUG("Backoff end: " << backoffEnd.As(Time::US));
 
@@ -733,6 +772,7 @@ ChannelAccessManager::DoRestartAccessTimeoutIfNeeded()
         }
         if (m_accessTimeout.IsExpired())
         {
+            std::cout << "m_accessTimeout.IsExpired() is true, scheduling new access timeout to " << Simulator::Now() + expectedBackoffDelay << std::endl;
             m_accessTimeout = Simulator::Schedule(expectedBackoffDelay,
                                                   &ChannelAccessManager::AccessTimeout,
                                                   this);

@@ -60,7 +60,8 @@ InfrastructureWifiMac::InfrastructureWifiMac()
       m_cfpStart(NanoSeconds(0)),
       m_lastBeacon(Seconds(0)),
       m_cfpForeshortening(Seconds(0)),
-      m_currentMpdu(0)
+      m_currentMpdu(0),
+      m_inCfp(false)
 {
     NS_LOG_FUNCTION(this);
 

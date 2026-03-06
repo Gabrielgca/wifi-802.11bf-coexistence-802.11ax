@@ -1443,6 +1443,7 @@ HePhy::StartTx(Ptr<const WifiPpdu> ppdu)
 {
     NS_LOG_FUNCTION(this << ppdu);
     const auto& txVector = ppdu->GetTxVector();
+    std::cout << "HePhy::StartTx called at " << Simulator::Now().As(Time::S) << "s" << std::endl;
     if (auto mac = m_wifiPhy->GetDevice()->GetMac(); mac && (mac->GetTypeOfStation() == AP))
     {
         m_currentTxVector = txVector;

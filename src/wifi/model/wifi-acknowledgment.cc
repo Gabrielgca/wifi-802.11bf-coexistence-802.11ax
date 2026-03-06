@@ -78,6 +78,8 @@ WifiNoAck::CheckQosAckPolicy(Mac48Address receiver,
                              uint8_t tid,
                              WifiMacHeader::QosAckPolicy ackPolicy) const
 {
+    std::cout << "CheckQosAckPolicy in WifiNoAck: receiver=" << receiver << ", tid=" << +tid
+              << ", ackPolicy=" << ackPolicy << std::endl;
     return ackPolicy == WifiMacHeader::NO_ACK || ackPolicy == WifiMacHeader::BLOCK_ACK;
 }
 
@@ -107,6 +109,8 @@ WifiNormalAck::CheckQosAckPolicy(Mac48Address receiver,
                                  uint8_t tid,
                                  WifiMacHeader::QosAckPolicy ackPolicy) const
 {
+    std::cout << "CheckQosAckPolicy in WifiNormalAck: receiver=" << receiver << ", tid=" << +tid
+              << ", ackPolicy=" << ackPolicy << std::endl;
     return ackPolicy == WifiMacHeader::NORMAL_ACK;
 }
 

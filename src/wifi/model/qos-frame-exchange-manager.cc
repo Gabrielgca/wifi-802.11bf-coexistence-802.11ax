@@ -164,7 +164,7 @@ QosFrameExchangeManager::StartTransmission(Ptr<Txop> edca, uint16_t allowedWidth
         // gained channel access while performing PIFS recovery. Abort PIFS recovery
         CancelPifsRecovery();
     }
-
+    std::cout << "QosFrameExchangeManager::StartTransmission called" << std::endl;
     // TODO This will become an assert once no Txop is installed on a QoS station
     if (!edca->IsQosTxop())
     {
@@ -248,6 +248,7 @@ QosFrameExchangeManager::StartTransmission(Ptr<QosTxop> edca, Time txopDuration)
             NS_LOG_DEBUG("Not enough remaining TXOP time");
             std::cout << "SendCfEndIfNeeded Not enough remaining TXOP time on link " << +m_linkId << std::endl;
             return SendCfEndIfNeeded();
+            // return false;
         }
 
         return true;
@@ -358,9 +359,11 @@ QosFrameExchangeManager::TryAddMpdu(Ptr<const WifiMpdu> mpdu,
     NS_LOG_DEBUG("protection time=" << protectionTime);
 
     // check if adding the given MPDU requires a different acknowledgment method
+    std::cout << "mpdu header: " << mpdu->GetHeader() << std::endl;
     Time acknowledgmentTime = Time::Min(); // uninitialized
     if (txParams.m_acknowledgment)
     {
+        std::cout << "if (txParams.m_acknowledgment) in TryAddMpdu" << std::endl;
         acknowledgmentTime = txParams.m_acknowledgment->acknowledgmentTime;
     }
 
@@ -370,6 +373,7 @@ QosFrameExchangeManager::TryAddMpdu(Ptr<const WifiMpdu> mpdu,
 
     if (acknowledgment)
     {
+        std::cout << "if (acknowledgment) in TryAddMpdu" << std::endl;
         // the acknowledgment method has changed, calculate the new acknowledgment time
         CalculateAcknowledgmentTime(acknowledgment.get());
         acknowledgmentTime = acknowledgment->acknowledgmentTime;

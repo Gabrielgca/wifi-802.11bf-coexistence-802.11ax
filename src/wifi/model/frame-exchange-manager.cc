@@ -353,6 +353,7 @@ FrameExchangeManager::StartTransmission(Ptr<Txop> dcf, uint16_t allowedWidth)
     // Even though channel access is requested when the queue is not empty, at
     // the time channel access is granted the lifetime of the packet might be
     // expired and the queue might be empty.
+    std::cout << "FrameExchangeManager StartTransmission called for DCF" << std::endl;
     queue->WipeAllExpiredMpdus();
 
     Ptr<WifiMpdu> mpdu = queue->Peek(m_linkId);
@@ -531,14 +532,18 @@ FrameExchangeManager::SendMpdu()
         // Attempt to implement PCF
         if (!IsMacTxOkCallbackNull())
         {
-            Simulator::Schedule(txDuration, &FrameExchangeManager::m_macTxOkCallback, this, m_mpdu);
-            // m_dcf->NotifyChannelReleasedForPCF(m_linkId);
-            // m_dcf = nullptr;
+            // Simulator::Schedule(txDuration, &FrameExchangeManager::m_macTxOkCallback, this, m_mpdu);
+            Ptr<WifiMpdu> mpdu = m_mpdu;
+            Simulator::Schedule(txDuration, [this, mpdu]() {
+                m_macTxOkCallback(mpdu);
+                TransmissionSucceeded();
+            });
         }
-        
-        
-        Simulator::Schedule(txDuration, &FrameExchangeManager::TransmissionSucceeded, this);
-        
+        else
+        {
+            // This branch calls TransmissionSucceeded which calls NotifyChannelReleased
+            Simulator::Schedule(txDuration, &FrameExchangeManager::TransmissionSucceeded, this);
+        }
 
         // Simulator::Schedule(txDuration, &FrameExchangeManager::TransmissionSucceeded, this);
 
@@ -1206,7 +1211,7 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
         NS_LOG_INFO(" ---------------------------------------------------------------");
         NS_LOG_INFO("|");
     }
-    // NS_LOG_INFO(Simulator::Now() << " || Received : " << psdu->GetHeader(0));
+    std::cout << "FRAME EXCHANGE: Received frame at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
     if (!perMpduStatus.empty())
     {
         // for A-MPDUs, we get here only once
@@ -1214,7 +1219,8 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
     }
 
     Mac48Address addr1 = psdu->GetAddr1();
-
+    std::cout << "FRAME EXCHANGE: Addr1=" << addr1 << std::endl;
+    std::cout << "FRAME EXCHANGE: Self=" << m_self << std::endl;
     if (addr1.IsGroup() || addr1 == m_self)
     {
         // receive broadcast frames or frames addressed to us only
@@ -1223,6 +1229,7 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
             // if perMpduStatus is not empty (i.e., this MPDU is not included in an A-MPDU)
             // then it must contain a single value which must be true (i.e., the MPDU
             // has been correctly received)
+            std::cout << "FRAME EXCHANGE: Received single MPDU" << std::endl;
             NS_ASSERT(perMpduStatus.empty() || (perMpduStatus.size() == 1 && perMpduStatus[0]));
             // Ack and CTS do not carry Addr2
             if (!psdu->GetHeader(0).IsAck() && !psdu->GetHeader(0).IsCts())
@@ -1236,6 +1243,7 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
         }
         else
         {
+            std::cout << "FRAME EXCHANGE: Received A-MPDU with " << psdu->GetNMpdus() << " MPDUs" << std::endl;
             EndReceiveAmpdu(psdu, rxSignalInfo, txVector, perMpduStatus);
         }
     }

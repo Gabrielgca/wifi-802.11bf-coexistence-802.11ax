@@ -140,8 +140,7 @@ ApWifiMac::GetTypeId()
 }
 
 ApWifiMac::ApWifiMac()
-    : m_enableBeaconGeneration(false),
-    m_inCfp(false)
+    : m_enableBeaconGeneration(false)
 
 {
     NS_LOG_FUNCTION(this);
@@ -2836,9 +2835,9 @@ ApWifiMac::SendNextCfFrame(uint8_t linkId)
         GetLink(0U).feManager->SetMacTxOkCallback(MakeCallback(&ApWifiMac::TxOk, this));
     }
 
-    std::cout << "m_inCfp : " << m_inCfp << std::endl;
+    std::cout << "InfrastructureWifiMac::IsCfPeriod(0U) : " << InfrastructureWifiMac::IsCfPeriod(0U) << std::endl;
 
-    if (!m_inCfp)
+    if (!InfrastructureWifiMac::IsCfPeriod(0U))
     {
         // CFP already ended, nothing to do.
         return;
@@ -2894,12 +2893,18 @@ ApWifiMac::StartCfPeriod()   // was StartCfPeriod(void) — keep signature consi
     NS_LOG_FUNCTION(this);
     NS_ASSERT(GetPcfSupported());
 
-    m_inCfp   = true;
+    std::cout << "AP Start CF : " << GetAddress() << " " << Simulator::Now() << std::endl;
+    std::cout << "BEFORE StartCfPeriod IsInCfp() : " << IsInCfp() << std::endl;
+    m_inCfp = true;
+
+    std::cout << "StartCfPeriod IsInCfp() : " << IsInCfp() << std::endl;
 
     // Let InfrastructureWifiMac freeze EDCA queues via ChannelAccessManager.
     InfrastructureWifiMac::StartCfPeriod();
 
     NS_LOG_DEBUG("CFP started, max duration=" << GetCfpMaxDuration());
+
+    Simulator::Schedule(InfrastructureWifiMac::GetCfpMaxDuration(), &ApWifiMac::StopCfPeriod, this);
 }
 
 void
@@ -2907,16 +2912,22 @@ ApWifiMac::StopCfPeriod()
 {
     NS_LOG_FUNCTION(this);
 
-    if (m_inCfp)
-    {
-        EndSensing(0U);
-    }
-
     std::cout << "AP Stop CF by : " << GetAddress() << " " << Simulator::Now() << std::endl;
 
     // Let InfrastructureWifiMac unfreeze EDCA via ChannelAccessManager.
     InfrastructureWifiMac::StopCfPeriod();
 
+    // Cancel any pending CFP timeout event and end the CFP immediately.
+    EndSensing(0U);
+
+    // Reset NAV immediately so EDCA can resume without
+    // waiting for the full CfpMaxDuration to expire.
+    // The CF-End frame itself signals that the channel
+    // is free — no need to wait for the NAV timer.
+    for (uint8_t linkId = 0; linkId < GetNLinks(); linkId++)
+    {
+        GetChannelAccessManager(linkId)->NotifyNavResetNow(Seconds(0));
+    }
 
     if (GetQosSupported())
     {
@@ -2957,6 +2968,7 @@ ApWifiMac::StartSensing(uint8_t linkId)
     // Build and queue a QoS CF-Poll addressed to the current STA.
     Mac48Address pollTarget = *m_itCfPollingList;
 
+    GetQosTxop(AcIndex(m_SensingPriority))->StartBackoffNow(0, linkId);
 
     Ptr<WifiMpdu> lastMpdu = GetQosTxop(AcIndex(m_SensingPriority))->PeekNextMpdu(linkId);
     if (lastMpdu)
@@ -3059,6 +3071,7 @@ ApWifiMac::EndSensing(uint8_t linkId)
 {
     NS_LOG_FUNCTION(this);
     NS_ASSERT(GetPcfSupported());
+
     if (!m_inCfp)
     {
         // Already stopped (e.g. called twice due to race), ignore.
@@ -3094,8 +3107,8 @@ ApWifiMac::EndSensing(uint8_t linkId)
     // m_beaconTxop->Queue(packet, cfEndHdr);
     // Broadcast CF-End to release all STAs from their NAV hold.
     // SendCfEnd(linkId);
-    m_inCfp = false;
-    StopCfPeriod();
+    // m_inCfp = false;
+    // StopCfPeriod();
     // has been transmitted, to avoid a race with the NAV reset at STAs.
 }
 

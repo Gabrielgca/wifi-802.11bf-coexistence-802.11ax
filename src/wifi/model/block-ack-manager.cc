@@ -487,6 +487,7 @@ BlockAckManager::NotifyGotBlockAck(uint8_t linkId,
     }
 
     // Dequeue all acknowledged MPDUs at once
+    std::cout << "Dequeue all acknowledged MPDUs at once: " << acked.size() << " MPDUs" << std::endl;
     m_queue->DequeueIfQueued(acked);
 
     // Remaining outstanding MPDUs have not been acknowledged

@@ -663,8 +663,6 @@ class ApWifiMac : public InfrastructureWifiMac
     bool m_SensingAppBegin = false; //!< Flag to indicate that the sensing application has started
     bool m_waitingCSIReport = false; //!< Flag to indicate that the AP is waiting for a CSI report
 
-    // Set in StartCfPeriod(), cleared in StopCfPeriod().
-    bool m_inCfp;
 
     // Safety-timeout event: fires EndSensing() if sensing never completes cleanly.
     EventId m_cfpTimeoutEvent;

@@ -1118,7 +1118,7 @@ StaWifiMac::StartCfPeriod()   // was StartCfPeriod(void) — keep signature cons
     NS_LOG_FUNCTION(this);
     NS_ASSERT(GetPcfSupported());
 
-    m_inCfp   = true;
+    m_inCfp = true;
 
     // Let InfrastructureWifiMac freeze EDCA queues via ChannelAccessManager.
     InfrastructureWifiMac::StartCfPeriod();
@@ -1159,6 +1159,8 @@ StaWifiMac::StopCfPeriod()
             }
         }
     }
+
+    m_inCfp = false;
 }
 
 void
@@ -1251,6 +1253,7 @@ StaWifiMac::Receive(Ptr<const WifiMpdu> mpdu, uint8_t linkId)
     }
     if (hdr->IsData())
     {
+        std::cout << "STA received data frame at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
         if (!IsAssociated())
         {
             NS_LOG_LOGIC("Received data frame while not associated: ignore");

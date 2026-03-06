@@ -142,7 +142,7 @@ bool
 EhtFrameExchangeManager::StartTransmission(Ptr<Txop> edca, uint16_t allowedWidth)
 {
     NS_LOG_FUNCTION(this << edca << allowedWidth);
-
+    std::cout << "EhtFrameExchangeManager StartTransmission called for DCF " << std::endl;
     auto started = HeFrameExchangeManager::StartTransmission(edca, allowedWidth);
 
     if (started && m_staMac && m_staMac->IsEmlsrLink(m_linkId))

@@ -222,8 +222,9 @@ HeFrameExchangeManager::StartFrameExchange(Ptr<QosTxop> edca, Time availableTime
     {
         if (m_apMac)
         {
-            if (m_apMac->GetPcfSupported())
+            if (m_apMac->IsInCfp())
             {
+                std::cout << "AP is in CFP, calling NotifyAccessGranted with availableTime=" << availableTime.As(Time::S) << "s" << std::endl;
                 txFormat = m_muScheduler->NotifyAccessGranted(edca,
                                                               availableTime,
                                                               initialFrame,
@@ -238,8 +239,9 @@ HeFrameExchangeManager::StartFrameExchange(Ptr<QosTxop> edca, Time availableTime
         }
         else if (m_staMac)
         {
-            if (m_staMac->GetPcfSupported())
+            if (m_staMac->IsInCfp())
             {
+                std::cout << "STA is in CFP, calling NotifyAccessGranted with availableTime=" << availableTime.As(Time::S) << "s" << std::endl;
                 txFormat = m_muScheduler->NotifyAccessGranted(edca,
                                                               availableTime,
                                                               initialFrame,
@@ -267,15 +269,15 @@ HeFrameExchangeManager::StartFrameExchange(Ptr<QosTxop> edca, Time availableTime
     if (txFormat == MultiUserScheduler::SU_TX)
     {
         // NS_LOG_INFO("HeFrameExchangeManager::StartFrameExchange line 235 : SU_TX");
-        // if (m_apMac && m_apMac->GetPcfSupported() && mpdu_test)
+        // if (m_apMac && m_apMac->IsInCfp() && mpdu_test)
         // {
-        //     if (mpdu_test->GetHeader().IsCts() && m_apMac->GetPcfSupported())
+        //     if (mpdu_test->GetHeader().IsCts() && m_apMac->IsInCfp())
         //     {
         //         return FrameExchangeManager::StartTransmission(edca, m_phy->GetPhyBand());
         //     }
         // }
 
-        // if (m_staMac && m_staMac->GetPcfSupported() && m_staMac->IsAssociated() && mpdu && mpdu->GetHeader().IsAssocReq() &&
+        // if (m_staMac && m_staMac->IsInCfp() && m_staMac->IsAssociated() && mpdu && mpdu->GetHeader().IsAssocReq() &&
         //     mpdu->GetHeader().IsReassocReq())
         // {
         //     return false;
@@ -416,7 +418,8 @@ HeFrameExchangeManager::SendPsduMapWithProtection(WifiPsduMap psduMap, WifiTxPar
     if (!m_txParams.m_txVector.IsUlMu() && IsTrigger(m_psduMap))
     {
         NS_ASSERT(m_muScheduler);
-        if (!m_apMac->GetPcfSupported())
+        std::cout << "m_apMac->IsInCfp() : " << m_apMac->IsInCfp() << std::endl;
+        if (!m_apMac->IsInCfp())
         {
             const auto& trigger = m_muScheduler->GetUlMuInfo(m_linkId).trigger;
             NS_ASSERT_MSG(!trigger.IsBasic() || m_txParams.m_acknowledgment->method ==
@@ -539,6 +542,7 @@ void
 HeFrameExchangeManager::SendMuRts(const WifiTxParameters& txParams)
 {
     NS_LOG_FUNCTION(this << &txParams);
+    std::cout << "HeFrameExchangeManager::SendMuRts CTL_TRIGGER at " << Simulator::Now() << std::endl;
     WifiMacHeader hdr;
     hdr.SetType(WIFI_MAC_CTL_TRIGGER);
     hdr.SetAddr1(Mac48Address::GetBroadcast());
@@ -937,7 +941,7 @@ HeFrameExchangeManager::SendPsduMap()
         else if (m_txParams.m_acknowledgment->method == WifiAcknowledgment::NONE &&
                  !m_txParams.m_txVector.IsUlMu() && IsTrigger(m_psduMap))
         {
-            if (!m_apMac->IsCfPeriod())
+            if (!m_apMac->IsInCfp())
             {
                 CtrlTriggerHeader& trigger = m_muScheduler->GetUlMuInfo(m_linkId).trigger;
                 NS_ASSERT(trigger.IsBsrp());
@@ -974,6 +978,7 @@ HeFrameExchangeManager::SendPsduMap()
             }
             else
             {
+                std::cout << "trigger.IsBsrp(): " << trigger.IsBsrp() << std::endl;
                 CtrlTriggerHeader& trigger =
                     m_muScheduler->GetPollingMuInfo(m_linkId).triggerUlPoll;
                 NS_ASSERT(trigger.IsBsrp());
@@ -1148,7 +1153,7 @@ HeFrameExchangeManager::SendPsduMap()
     {
         Time timeout = txDuration + m_phy->GetSifs() + m_phy->GetSlot() +
                        m_phy->CalculatePhyPreambleAndHeaderDuration(*responseTxVector);
-        if (m_apMac && m_apMac->GetPcfSupported())
+        if (m_apMac && m_apMac->IsInCfp())
         {
             // std::cout << m_apMac->GetCfpMaxDuration()<< std::endl;
             // std::cout << m_apMac->GetCfpMaxDuration() - timeout << std::endl;
@@ -1284,7 +1289,7 @@ HeFrameExchangeManager::SendPsduMap()
     // Attempt to modify MU-MIMO for 11bf polling phase
     // Handling the DL poll frame transmission
     else if (timerType == WifiTxTimer::NOT_RUNNING && m_txParams.m_txVector.IsDlMu() &&
-             m_apMac->GetPcfSupported() && m_psduMap.begin()->second->GetHeader(0).IsCfPoll())
+             m_apMac->IsInCfp() && m_psduMap.begin()->second->GetHeader(0).IsCfPoll())
     {
         // clear m_psduMap after sending QoS Null frames following a BSRP Trigger Frame
         // Simulator::Schedule(txDuration, &WifiPsduMap::clear, &m_psduMap);
@@ -1365,6 +1370,7 @@ HeFrameExchangeManager::PrepareMuBar(const WifiTxVector& responseTxVector,
         rxAddress = m_apMac->GetStaList(m_linkId).at(recipients.begin()->first);
     }
 
+    std::cout << "Preparing MU-BAR Trigger Frame CTL_TRIGGER with RA " << rxAddress << std::endl;
     WifiMacHeader hdr;
     hdr.SetType(WIFI_MAC_CTL_TRIGGER);
     hdr.SetAddr1(rxAddress);
@@ -1667,7 +1673,7 @@ HeFrameExchangeManager::TbPpduTimeout(WifiPsduMap* psduMap, std::size_t nSolicit
     if (staMissedTbPpduFrom.size() == nSolicitedStations)
     {
         // no station replied, the transmission failed
-        if (m_apMac && m_apMac->IsCfPeriod())
+        if (m_apMac && m_apMac->IsInCfp())
         {
             ResetSensingTimeout();
             std::cout << "--- 1 Collision in polling phase ---" << std::endl;
@@ -1682,7 +1688,7 @@ HeFrameExchangeManager::TbPpduTimeout(WifiPsduMap* psduMap, std::size_t nSolicit
     else if (!m_multiStaBaEvent.IsRunning())
     {
         // Modification for IEEE 802.11bf
-        if (m_apMac && m_apMac->GetPcfSupported())
+        if (m_apMac && m_apMac->IsInCfp())
         {
             ResetSensingTimeout();
             std::cout << "--- 2 Collision in polling phase ---" << std::endl;
@@ -2727,9 +2733,9 @@ HeFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                               << std::to_string(m_csBeamformer->GetNumCsStations()) << std::endl;
                 }
 
-                // if (m_apMac->GetPcfSupported() &&
+                // if (m_apMac->IsInCfp() &&
                 //     (m_apMac->GetRemainingCfpDuration()).IsStrictlyPositive())
-                if (m_apMac->GetPcfSupported())
+                if (m_apMac->IsInCfp())
                 {
                     if (m_muScheduler->GetSoundingType() == 0U &&
                         m_muScheduler->DoSUNDPASoundingStation() &&
@@ -2836,7 +2842,7 @@ HeFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
         }
         if (!(hdr.IsQosData() && !hdr.HasData()))
         {
-            if (m_apMac->GetPcfSupported() && hdr.IsCts())
+            if (m_apMac->IsInCfp() && hdr.IsCts())
             {
                 // remove the sender from the set of stations that are expected to send a TB PPDU
                 m_txTimer.GotResponseFrom(sender);
@@ -3210,10 +3216,10 @@ HeFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
             }
             else if (trigger.IsBsrp())
             {
-                if (m_staMac->GetPcfSupported() && trigger.IsBsrp())
+                std::cout << "Received a BSRP Trigger Frame" << std::endl;
+                if (m_staMac->IsInCfp() && trigger.IsBsrp())
                 {
-
-                    std::cout << "Received a BSRP Trigger Frame" << std::endl;
+                    std::cout << "is In CFP and is BSRP" << std::endl;
                     if (!m_Polling_Receive_mutex)
                     {
                         return;
@@ -3237,6 +3243,7 @@ HeFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                 }
                 else
                 {
+                    std::cout << "It is NOT In CFP and is BSRP" << std::endl;
                     Simulator::Schedule(m_phy->GetSifs(),
                                         &HeFrameExchangeManager::SendQosNullFramesInTbPpdu,
                                         this,
@@ -3322,10 +3329,12 @@ HeFrameExchangeManager::EndReceiveAmpdu(Ptr<const WifiPsdu> psdu,
                                         const std::vector<bool>& perMpduStatus)
 {
     std::set<uint8_t> tids = psdu->GetTids();
-
+    std::cout << "HeFrameExchangeManager EndReceiveAmpdu: tids in the received A-MPDU " << std::endl;
+    std::cout << "GetSupportedBaBufferSize: " << static_cast<int>(GetSupportedBaBufferSize()) << std::endl;
     if (txVector.IsUlMu() && m_txTimer.IsRunning() &&
         m_txTimer.GetReason() == WifiTxTimer::WAIT_TB_PPDU_AFTER_BASIC_TF)
     {
+        std::cout << "WAIT_TB_PPDU_AFTER_BASIC_TF DEALING WITH TB PPDU in EndReceiveAmpdu" << std::endl;
         Mac48Address sender = psdu->GetAddr2();
         NS_ASSERT(m_txParams.m_acknowledgment &&
                   m_txParams.m_acknowledgment->method == WifiAcknowledgment::UL_MU_MULTI_STA_BA);
@@ -3403,6 +3412,7 @@ HeFrameExchangeManager::EndReceiveAmpdu(Ptr<const WifiPsdu> psdu,
     if (txVector.IsUlMu() && m_txTimer.IsRunning() &&
         m_txTimer.GetReason() == WifiTxTimer::WAIT_QOS_NULL_AFTER_BSRP_TF)
     {
+        std::cout << "WAIT_QOS_NULL_AFTER_BSRP_TF DEALING WITH TB PPDU in EndReceiveAmpdu" << std::endl;
         Mac48Address sender = psdu->GetAddr2();
 
         if (m_txTimer.GetStasExpectedToRespond().count(sender) == 0)
@@ -3442,6 +3452,7 @@ HeFrameExchangeManager::EndReceiveAmpdu(Ptr<const WifiPsdu> psdu,
     if (m_triggerFrameInAmpdu)
     {
         // the received A-MPDU contains a Trigger Frame. It is now time to handle it.
+        std::cout << "Received an A-MPDU containing a Trigger Frame, process the Trigger Frame now" << std::endl;
         auto psduIt = psdu->begin();
         while (psduIt != psdu->end())
         {
@@ -3456,7 +3467,7 @@ HeFrameExchangeManager::EndReceiveAmpdu(Ptr<const WifiPsdu> psdu,
         m_triggerFrameInAmpdu = false;
         return;
     }
-
+    std::cout << "HeFrameExchangeManager EndReceiveAmpdu: VhtFrameExchangeManager " << std::endl;
     // the received frame cannot be handled here
     VhtFrameExchangeManager::EndReceiveAmpdu(psdu, rxSignalInfo, txVector, perMpduStatus);
 }
@@ -3510,7 +3521,7 @@ HeFrameExchangeManager::BfReportTimeout(void)
 
         if (sta.size() == m_csBeamformer->GetNumCsStations())
         {
-            if (m_apMac && m_edca && m_apMac->GetPcfSupported())
+            if (m_apMac && m_edca && m_apMac->IsInCfp())
             {
                 ResetSensingTimeout();
                 std::cout << "--- Collision in reporting phase ---" << std::endl;
@@ -3524,7 +3535,7 @@ HeFrameExchangeManager::BfReportTimeout(void)
         }
         else
         {
-            if (m_apMac && m_edca && m_apMac->GetPcfSupported())
+            if (m_apMac && m_edca && m_apMac->IsInCfp())
             {
                 ResetSensingTimeout();
                 std::cout << "--- Collision in reporting phase ---" << std::endl;

@@ -1885,6 +1885,8 @@ WifiPhy::Send(WifiConstPsduMap psdus, const WifiTxVector& txVector)
 
     m_endTxEvent =
         Simulator::Schedule(txDuration, &WifiPhy::NotifyTxEnd, this, psdus); // TODO: fix for MU
+    std::cout << "Starting Tx at " << Simulator::Now().As(Time::S) << "s, duration: " << txDuration.As(Time::S)
+              << "s" << std::endl;
     StartTx(ppdu);
     ppdu->ResetTxVector();
 

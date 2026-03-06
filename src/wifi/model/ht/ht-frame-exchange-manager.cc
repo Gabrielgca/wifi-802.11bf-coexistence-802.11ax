@@ -1666,10 +1666,11 @@ HtFrameExchangeManager::EndReceiveAmpdu(Ptr<const WifiPsdu> psdu,
                                         const std::vector<bool>& perMpduStatus)
 {
     std::set<uint8_t> tids = psdu->GetTids();
-
+    std::cout << "HtFrameExchangeManager::EndReceiveAmpdu" << std::endl;
     // Multi-TID A-MPDUs are not supported yet
     if (tids.size() == 1)
     {
+        std::cout << "Notify BA manager about received A-MPDU with " << tids.size() << " TIDs" << std::endl;
         uint8_t tid = *tids.begin();
         WifiMacHeader::QosAckPolicy ackPolicy = psdu->GetAckPolicyForTid(tid);
         NS_ASSERT(psdu->GetNMpdus() > 1);
