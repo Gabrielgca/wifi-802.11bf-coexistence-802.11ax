@@ -942,7 +942,7 @@ HtFrameExchangeManager::SendPsduWithProtection(Ptr<WifiPsdu> psdu, WifiTxParamet
             mpdu->SetInFlight(m_linkId);
         }
     }
-    std::cout << "HtFrameExchangeManager::SendPsduWithProtection: " << std::endl;
+    // std::cout << "HtFrameExchangeManager::SendPsduWithProtection: " << std::endl;
     StartProtection(m_txParams);
 }
 
@@ -1637,7 +1637,7 @@ HtFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
         {
             // a Block Ack agreement has been established
             NS_LOG_DEBUG("Received from=" << hdr.GetAddr2() << " (" << *mpdu << ")");
-            std::cout << "2 Notify BA manager about received MPDU with seqno=" << hdr.GetSequenceNumber() << std::endl;
+            // std::cout << "2 Notify BA manager about received MPDU with seqno=" << hdr.GetSequenceNumber() << std::endl;
             GetBaManager(tid)->NotifyGotMpdu(mpdu);
 
             if (!inAmpdu && hdr.GetQosAckPolicy() == WifiMacHeader::NORMAL_ACK)
@@ -1666,11 +1666,11 @@ HtFrameExchangeManager::EndReceiveAmpdu(Ptr<const WifiPsdu> psdu,
                                         const std::vector<bool>& perMpduStatus)
 {
     std::set<uint8_t> tids = psdu->GetTids();
-    std::cout << "HtFrameExchangeManager::EndReceiveAmpdu" << std::endl;
+    // std::cout << "HtFrameExchangeManager::EndReceiveAmpdu" << std::endl;
     // Multi-TID A-MPDUs are not supported yet
     if (tids.size() == 1)
     {
-        std::cout << "Notify BA manager about received A-MPDU with " << tids.size() << " TIDs" << std::endl;
+        // std::cout << "Notify BA manager about received A-MPDU with " << tids.size() << " TIDs" << std::endl;
         uint8_t tid = *tids.begin();
         WifiMacHeader::QosAckPolicy ackPolicy = psdu->GetAckPolicyForTid(tid);
         NS_ASSERT(psdu->GetNMpdus() > 1);

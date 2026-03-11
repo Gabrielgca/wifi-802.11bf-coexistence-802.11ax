@@ -93,7 +93,7 @@ RecipientBlockAckAgreement::PassBufferedMpdusUntilFirstLost()
     while (it != m_bufferedMpdus.end() && it->first.first == m_winStartB)
     {
         NS_LOG_DEBUG("Forwarding up: " << *it->second);
-        std::cout << Simulator::Now() << " || Forwarding up: " << *it->second << std::endl;
+        // // std::cout << Simulator::Now() << " || Forwarding up: " << *it->second << std::endl;
         m_rxMiddle->Receive(it->second, WIFI_LINKID_UNDEFINED);
         it = m_bufferedMpdus.erase(it);
         m_winStartB = (m_winStartB + 1) % SEQNO_SPACE_SIZE;
@@ -116,7 +116,7 @@ RecipientBlockAckAgreement::PassBufferedMpdusWithSeqNumberLessThan(uint16_t newW
            GetDistance(it->first.first, m_winStartB) < GetDistance(newWinStartB, m_winStartB))
     {
         NS_LOG_DEBUG("Forwarding up: " << *it->second);
-        std::cout << Simulator::Now() << " || 2 Forwarding up: " << *it->second << std::endl;
+        // // std::cout << Simulator::Now() << " || 2 Forwarding up: " << *it->second << std::endl;
         m_rxMiddle->Receive(it->second, WIFI_LINKID_UNDEFINED);
         it = m_bufferedMpdus.erase(it);
     }
@@ -157,8 +157,7 @@ RecipientBlockAckAgreement::NotifyReceivedMpdu(Ptr<const WifiMpdu> mpdu)
         // starting with the MSDU or A-MSDU that has SN=WinStartB
         // 3. Set WinStartB to the value of the Sequence Number subfield of the last
         // MSDU or A-MSDU that was passed up to the next MAC process plus one.
-        std::cout << Simulator::Now() << " || 1 Received MPDU with SN=" << mpduSeqNumber
-                  << " stored in the buffer. WinStartB=" << m_winStartB << std::endl;
+        // std::cout << Simulator::Now() << " || 1 Received MPDU with SN=" << mpduSeqNumber << " stored in the buffer. WinStartB=" << m_winStartB << std::endl;
         PassBufferedMpdusUntilFirstLost();
     }
     else if (distance < SEQNO_SPACE_HALF_SIZE)
@@ -181,8 +180,7 @@ RecipientBlockAckAgreement::NotifyReceivedMpdu(Ptr<const WifiMpdu> mpdu)
         // order of increasing value of the Sequence Number subfield starting with
         // WinStartB and proceeding sequentially until there is no buffered MSDU or
         // A-MSDU for the next sequential Sequence Number subfield value
-        std::cout << Simulator::Now() << " || 2 Received MPDU with SN=" << mpduSeqNumber
-                  << " stored in the buffer. WinStartB=" << m_winStartB << std::endl;
+        // std::cout << Simulator::Now() << " || 2 Received MPDU with SN=" << mpduSeqNumber << " stored in the buffer. WinStartB=" << m_winStartB << std::endl;
         PassBufferedMpdusUntilFirstLost();
     }
 }
@@ -230,8 +228,7 @@ RecipientBlockAckAgreement::NotifyReceivedBar(uint16_t startingSequenceNumber)
         // in order of increasing Sequence Number subfield value starting with
         // SN=WinStartB and proceeding sequentially until there is no buffered MSDU
         // or A-MSDU for the next sequential Sequence Number subfield value
-        std::cout << Simulator::Now() << " || 4 Received BAR with SSN=" << startingSequenceNumber
-                  << ". WinStartB=" << m_winStartB << std::endl;
+        // std::cout << Simulator::Now() << " || 4 Received BAR with SSN=" << startingSequenceNumber << ". WinStartB=" << m_winStartB << std::endl;
         PassBufferedMpdusUntilFirstLost();
     }
 }

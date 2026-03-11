@@ -536,7 +536,7 @@ Txop::Queue(Ptr<Packet> packet, const WifiMacHeader& hdr, bool IsCfPeriod)
     }
     else
     {
-        std::cout << "Queueing DATA FRAME NOT IN CF PERIOD" << std::endl;
+        // // std::cout << "Queueing DATA FRAME NOT IN CF PERIOD" << std::endl;
         Queue(Create<WifiMpdu>(packet, hdr));
     }
 }
@@ -553,25 +553,25 @@ Txop::Queue(Ptr<WifiMpdu> mpdu, bool IsCfPeriod)
     {
         // This is a PCF mechanism, whereas the access is granted immediately, since the AP already
         // got the channel
-        // std::cout << GetAccessStatus(0U) << std::endl;
+        // // std::cout << GetAccessStatus(0U) << std::endl;
         m_queue->Enqueue(mpdu);
         NotifyAccessGranted(0U);
         return;
     }
 
-    std::cout << "Queueing " << *mpdu << " for transmission on link" << std::endl;
+    // // std::cout << "Queueing " << *mpdu << " for transmission on link" << std::endl;
 
     for (const auto linkId : linkIds)
     {
         if (m_mac->GetChannelAccessManager(linkId)->NeedBackoffUponAccess(this))
         {
-            std::cout << "Need backoff upon access for link " << +linkId << std::endl;
+            // std::cout << "Need backoff upon access for link " << +linkId << std::endl;
             GenerateBackoff(linkId);
         }
     }
     m_queue->Enqueue(mpdu);
 
-    std::cout << m_queue->GetCurrentSize() << " MPDUs in the queue for link " << std::endl;
+    // // std::cout << m_queue->GetCurrentSize() << " MPDUs in the queue for link " << std::endl;
     for (const auto linkId : linkIds)
     {
         StartAccessIfNeeded(linkId);
@@ -591,12 +591,12 @@ Txop::StartAccessIfNeeded(uint8_t linkId, bool IsCfPeriod)
 {
     NS_LOG_FUNCTION(this << +linkId);
 
-    std::cout << "StartAccessIfNeeded for link " << +linkId << " HasFramesToTransmit=" << HasFramesToTransmit(linkId) << " AccessStatus=" << GetAccessStatus(linkId) << std::endl;
+    // std::cout << "StartAccessIfNeeded for link " << +linkId << " HasFramesToTransmit=" << HasFramesToTransmit(linkId) << " AccessStatus=" << GetAccessStatus(linkId) << std::endl;
 
 
     if (HasFramesToTransmit(linkId) && GetLink(linkId).access == NOT_REQUESTED)
     {
-        std::cout << "Requesting Access for link " << +linkId << std::endl;
+        // std::cout << "Requesting Access for link " << +linkId << std::endl;
         m_mac->GetChannelAccessManager(linkId)->RequestAccess(this);
     }
 
@@ -661,13 +661,11 @@ Txop::NotifyChannelReleased(uint8_t linkId)
     NS_LOG_FUNCTION(this << +linkId);
     GetLink(linkId).access = NOT_REQUESTED;
     GenerateBackoff(linkId);
-    std::cout << "HasFramesToTransmit(linkId)=" << HasFramesToTransmit(linkId) << std::endl;
+    // std::cout << "HasFramesToTransmit(linkId)=" << HasFramesToTransmit(linkId) << std::endl;
     Ptr<const WifiMpdu> mpdu = m_queue->Peek();
     if (mpdu)
     {
-        std::cout << "Header: " << mpdu->GetHeader()
-                << " PayloadSize: " << mpdu->GetPacketSize()
-                << std::endl;
+        // std::cout << "Header: " << mpdu->GetHeader() << " PayloadSize: " << mpdu->GetPacketSize() << std::endl;
     }
     if (HasFramesToTransmit(linkId))
     {
@@ -998,7 +996,7 @@ void
 Txop::NotifyChannelReleasedForPCF(uint8_t linkId)
 {
     NS_LOG_FUNCTION(this << +linkId);
-    std::cout << "Notify Channel Released for PCF at " << Simulator::Now() << std::endl;  
+    // std::cout << "Notify Channel Released for PCF at " << Simulator::Now() << std::endl;  
     GetLink(linkId).access = NOT_REQUESTED;
     GenerateBackoff(linkId);
 }

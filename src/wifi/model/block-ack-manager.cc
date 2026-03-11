@@ -487,7 +487,7 @@ BlockAckManager::NotifyGotBlockAck(uint8_t linkId,
     }
 
     // Dequeue all acknowledged MPDUs at once
-    std::cout << "Dequeue all acknowledged MPDUs at once: " << acked.size() << " MPDUs" << std::endl;
+    // std::cout << "Dequeue all acknowledged MPDUs at once: " << acked.size() << " MPDUs" << std::endl;
     m_queue->DequeueIfQueued(acked);
 
     // Remaining outstanding MPDUs have not been acknowledged
@@ -642,8 +642,7 @@ BlockAckManager::NotifyGotMpdu(Ptr<const WifiMpdu> mpdu)
     {
         return;
     }
-    std::cout << "1 notifyReveivedMpdu: originator=" << originator << " tid=" << +tid
-              << " seq=" << mpdu->GetHeader().GetSequenceNumber() << std::endl;
+    // std::cout << "1 notifyReveivedMpdu: originator=" << originator << " tid=" << +tid << " seq=" << mpdu->GetHeader().GetSequenceNumber() << std::endl;
     it->second.NotifyReceivedMpdu(mpdu);
 }
 

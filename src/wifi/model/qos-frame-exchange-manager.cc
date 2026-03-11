@@ -164,7 +164,7 @@ QosFrameExchangeManager::StartTransmission(Ptr<Txop> edca, uint16_t allowedWidth
         // gained channel access while performing PIFS recovery. Abort PIFS recovery
         CancelPifsRecovery();
     }
-    std::cout << "QosFrameExchangeManager::StartTransmission called" << std::endl;
+    // std::cout << "QosFrameExchangeManager::StartTransmission called" << std::endl;
     // TODO This will become an assert once no Txop is installed on a QoS station
     if (!edca->IsQosTxop())
     {
@@ -227,7 +227,7 @@ QosFrameExchangeManager::StartTransmission(Ptr<QosTxop> edca, Time txopDuration)
 
             if (StartFrameExchange(m_edca, txopDuration, true))
             {
-                // std::cout << "Started new TXOP on link " << +m_linkId << std::endl;
+                // // std::cout << "Started new TXOP on link " << +m_linkId << std::endl;
                 m_initialFrame = true;
                 return true;
             }
@@ -240,13 +240,13 @@ QosFrameExchangeManager::StartTransmission(Ptr<QosTxop> edca, Time txopDuration)
         }
 
         // We are continuing a TXOP, check if we can transmit another frame
-        // std::cout << "m_initialFrame: " << m_initialFrame << std::endl;
+        // // std::cout << "m_initialFrame: " << m_initialFrame << std::endl;
         NS_ASSERT(!m_initialFrame);
 
         if (!StartFrameExchange(m_edca, m_edca->GetRemainingTxop(m_linkId), false))
         {
             NS_LOG_DEBUG("Not enough remaining TXOP time");
-            std::cout << "SendCfEndIfNeeded Not enough remaining TXOP time on link " << +m_linkId << std::endl;
+            // std::cout << "SendCfEndIfNeeded Not enough remaining TXOP time on link " << +m_linkId << std::endl;
             return SendCfEndIfNeeded();
             // return false;
         }
@@ -359,11 +359,11 @@ QosFrameExchangeManager::TryAddMpdu(Ptr<const WifiMpdu> mpdu,
     NS_LOG_DEBUG("protection time=" << protectionTime);
 
     // check if adding the given MPDU requires a different acknowledgment method
-    std::cout << "mpdu header: " << mpdu->GetHeader() << std::endl;
+    // std::cout << "mpdu header: " << mpdu->GetHeader() << std::endl;
     Time acknowledgmentTime = Time::Min(); // uninitialized
     if (txParams.m_acknowledgment)
     {
-        std::cout << "if (txParams.m_acknowledgment) in TryAddMpdu" << std::endl;
+        // std::cout << "if (txParams.m_acknowledgment) in TryAddMpdu" << std::endl;
         acknowledgmentTime = txParams.m_acknowledgment->acknowledgmentTime;
     }
 
@@ -373,7 +373,7 @@ QosFrameExchangeManager::TryAddMpdu(Ptr<const WifiMpdu> mpdu,
 
     if (acknowledgment)
     {
-        std::cout << "if (acknowledgment) in TryAddMpdu" << std::endl;
+        // std::cout << "if (acknowledgment) in TryAddMpdu" << std::endl;
         // the acknowledgment method has changed, calculate the new acknowledgment time
         CalculateAcknowledgmentTime(acknowledgment.get());
         acknowledgmentTime = acknowledgment->acknowledgmentTime;
@@ -729,7 +729,7 @@ QosFrameExchangeManager::UpdateNav(Ptr<const WifiPsdu> psdu, const WifiTxVector&
     if (psdu->GetHeader(0).IsCfEnd())
     {
         NS_LOG_DEBUG("Received CF-End, resetting NAV");
-        std::cout << "Update NAV: Received CF-End, resetting NAV on link " << +m_linkId << std::endl;
+        // std::cout << "Update NAV: Received CF-End, resetting NAV on link " << +m_linkId << std::endl;
         NavResetTimeout();
         return;
     }
@@ -796,14 +796,14 @@ QosFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                                 txVector,
                                 rxSnr);
         }
-        // std::cout << "QOS Received " << hdr.GetTypeString() << " from=" << hdr.GetAddr2() << std::endl;
+        // // std::cout << "QOS Received " << hdr.GetTypeString() << " from=" << hdr.GetAddr2() << std::endl;
         // Forward up the frame
         m_rxMiddle->Receive(mpdu, m_linkId);
 
         // the received data frame has been processed
         return;
     }
-    std::cout << "FrameExchangeManager Received " << hdr.GetTypeString() << " from=" << hdr.GetAddr2() << std::endl;
+    // std::cout << "FrameExchangeManager Received " << hdr.GetTypeString() << " from=" << hdr.GetAddr2() << std::endl;
     return FrameExchangeManager::ReceiveMpdu(mpdu, rxSignalInfo, txVector, inAmpdu);
 }
 

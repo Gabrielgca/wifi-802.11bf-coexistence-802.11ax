@@ -287,7 +287,7 @@ MultiUserScheduler::GetUlMuInfo(uint8_t linkId)
 MultiUserScheduler::PollingMuInfo&
 MultiUserScheduler::GetPollingMuInfo(uint8_t linkId)
 {
-    std::cout << "m_lastTxInfo[linkId].lastTxFormat" << m_lastTxInfo[linkId].lastTxFormat << std::endl;
+    // std::cout << "m_lastTxInfo[linkId].lastTxFormat" << m_lastTxInfo[linkId].lastTxFormat << std::endl;
     NS_ABORT_MSG_IF(m_lastTxInfo[linkId].lastTxFormat != BF_POLL_DL_TX,
                     "Next transmission is not 11bf Polling Phase MU");
 
@@ -322,7 +322,7 @@ MultiUserScheduler::GetTriggerFrame(const CtrlTriggerHeader& trigger, uint8_t li
         NS_ASSERT(aidAddrMapIt != m_apMac->GetStaList(linkId).end());
         receiver = aidAddrMapIt->second;
     }
-    std::cout << "MultiUserScheduler CTL_TRIGGER GetTriggerFrame" << std::endl;
+    // std::cout << "MultiUserScheduler CTL_TRIGGER GetTriggerFrame" << std::endl;
     WifiMacHeader hdr(WIFI_MAC_CTL_TRIGGER);
     hdr.SetAddr1(receiver);
     hdr.SetAddr2(GetHeFem(linkId)->GetAddress());

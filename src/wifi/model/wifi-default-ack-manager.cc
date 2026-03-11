@@ -209,11 +209,23 @@ std::unique_ptr<WifiAcknowledgment>
 WifiDefaultAckManager::TryAddMpdu(Ptr<const WifiMpdu> mpdu, const WifiTxParameters& txParams)
 {
     NS_LOG_FUNCTION(this << *mpdu << &txParams);
-    std::cout << "txParams.m_txVector: " << txParams.m_txVector << std::endl;
-    std::cout << "m_dlMuAckType: " << m_dlMuAckType << std::endl;
+    // std::cout << "txParams.m_txVector: " << txParams.m_txVector << std::endl;
+    // std::cout << "m_dlMuAckType: " << m_dlMuAckType << std::endl;
 
     const WifiMacHeader& hdr = mpdu->GetHeader();
     Mac48Address receiver = hdr.GetAddr1();
+
+
+    // PCF polling frames must always use NoAck regardless of DL MU ack type
+    if (hdr.GetType() == WIFI_MAC_QOSDATA_CFPOLL || hdr.GetType() == WIFI_MAC_QOSDATA_NULL)
+    {
+        auto acknowledgment = txParams.m_acknowledgment
+                                ? static_cast<WifiNoAck*>(
+                                        txParams.m_acknowledgment.get())->Copy()
+                                : std::make_unique<WifiNoAck>();
+        acknowledgment->SetQosAckPolicy(hdr.GetAddr1(), hdr.GetQosTid(), WifiMacHeader::NO_ACK);
+        return acknowledgment;
+    }
     // If the TXVECTOR indicates a DL MU PPDU, call a separate method
     if (txParams.m_txVector.IsDlMu())
     {
@@ -227,20 +239,37 @@ WifiDefaultAckManager::TryAddMpdu(Ptr<const WifiMpdu> mpdu, const WifiTxParamete
             return GetAckInfoIfAggregatedMuBar(mpdu, txParams);
         case WifiAcknowledgment::NONE:
         {
-            // For each new MPDU, ensure the QoS ack policy is registered
-            // for this receiver/tid pair. Follow the same copy-and-modify
-            // pattern used by other DL MU acknowledgment methods.
+            if (hdr.IsQosData() && 
+                hdr.GetQosAckPolicy() == WifiMacHeader::NORMAL_ACK &&
+                txParams.m_txVector.GetHeMuUserInfoMap().size() == 1)
+            {
+                // Single receiver with NORMAL_ACK → use proper BlockAck
+                // so MPDUs get dequeued correctly
+
+                
+                // auto acknowledgment = std::make_unique<WifiNormalAck>();
+                // acknowledgment->ackTxVector =
+                //     GetWifiRemoteStationManager()->GetAckTxVector(receiver, txParams.m_txVector);
+                // acknowledgment->SetQosAckPolicy(receiver, hdr.GetQosTid(), WifiMacHeader::NORMAL_ACK);
+
+
+                //         return acknowledgment;
+                WifiAcknowledgment::Method aux_dlMuAckType = m_dlMuAckType;
+                m_dlMuAckType = WifiAcknowledgment::DL_MU_BAR_BA_SEQUENCE;
+                GetAckInfoIfBarBaSequence(mpdu, txParams);
+                m_dlMuAckType = aux_dlMuAckType;
+                
+            }
+
+            // Default NoAck path for everything else (CFPOLL, multicast, etc.)
             auto acknowledgment = txParams.m_acknowledgment
                                     ? static_cast<WifiNoAck*>(
                                             txParams.m_acknowledgment.get())->Copy()
                                     : std::make_unique<WifiNoAck>();
-
             if (hdr.IsQosData())
             {
-                acknowledgment->SetQosAckPolicy(
-                    receiver,
-                    hdr.GetQosTid(),
-                    WifiMacHeader::NO_ACK);
+                acknowledgment->SetQosAckPolicy(receiver, hdr.GetQosTid(),
+                                                WifiMacHeader::NO_ACK);
             }
             return acknowledgment;
         }
@@ -414,7 +443,10 @@ WifiDefaultAckManager::GetAckInfoIfBarBaSequence(Ptr<const WifiMpdu> mpdu,
                     "DL MU PPDU acknowledged via a sequence of BAR and BA frames");
     uint8_t tid = hdr.GetQosTid();
     Ptr<QosTxop> edca = m_mac->GetQosTxop(QosUtilsMapTidToAc(tid));
-    std::cout << "txParams.m_acknowledgment: " << static_cast<void*>(txParams.m_acknowledgment.get()) << std::endl;
+    if (txParams.m_acknowledgment)
+    {
+        // std::cout << "GetAckInfoIfBarBaSequence: existing ack method = " << txParams.m_acknowledgment->method << std::endl;
+    }
     NS_ASSERT(!txParams.m_acknowledgment ||
               txParams.m_acknowledgment->method == WifiAcknowledgment::DL_MU_BAR_BA_SEQUENCE);
 

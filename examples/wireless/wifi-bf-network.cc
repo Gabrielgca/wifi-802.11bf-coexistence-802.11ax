@@ -1308,9 +1308,8 @@ main(int argc, char* argv[])
     // MU-OFDMA Setup in Physical Layer        //
     /*******************************************/
     bool enableWiFiMuSensing = 1;
-    bool enableUlOfdma = 1;
-    uint8_t maxNumDlMuMimoSta =
-        1; // Maximum number of stations in downlink MU-MIMO data transmission
+    bool enableUlOfdma = false;
+    uint8_t maxNumDlMuMimoSta = 2; // Maximum number of stations in downlink MU-MIMO data transmission
     std::string csMode =
         "HeMcs0"; // Wifi mode used for beamforming report feedback (If set as "0", wifi mode is
                   // automatically selected as the same mode as in data transmission)
@@ -1450,7 +1449,7 @@ main(int argc, char* argv[])
 
     // Set the default Acknowledgment mode to NONE
     Config::SetDefault("ns3::WifiDefaultAckManager::DlMuAckSequenceType",
-                       EnumValue(WifiAcknowledgment::NONE));
+                       EnumValue(WifiAcknowledgment::DL_MU_BAR_BA_SEQUENCE));
 
     Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel>();
 
@@ -1546,7 +1545,7 @@ main(int argc, char* argv[])
                                             "ChannelSoundingInterval",
                                             TimeValue(channelSoundingInterval),
                                             "EnableUlOfdma",
-                                            BooleanValue(false),
+                                            BooleanValue(enableUlOfdma),
                                             "EnableMuMimo",
                                             BooleanValue(enableWiFiMuSensing),
                                             "MaxNumDlMuMimoSta",
@@ -1635,7 +1634,7 @@ main(int argc, char* argv[])
                                         "ChannelSoundingInterval",
                                         TimeValue(channelSoundingInterval),
                                         "EnableUlOfdma",
-                                        BooleanValue(false),
+                                        BooleanValue(enableUlOfdma),
                                         "EnableMuMimo",
                                         BooleanValue(enableWiFiMuSensing),
                                         "MaxNumDlMuMimoSta",
@@ -2339,16 +2338,12 @@ main(int argc, char* argv[])
                 {
                     UdpClientHelper client(serverInterfaces.GetAddress(index), portNumber);
                     client.SetAttribute("MaxPackets", UintegerValue(4294967295U));
-                    // client.SetAttribute("MaxPackets", UintegerValue(1U));
-                    client.SetAttribute("Interval",
-                                        TimeValue(Time("0.00001"))); // packets/s
-                    // client.SetAttribute("Interval",
-                    //                     TimeValue(Time("1"))); // packets/s;
+                    client.SetAttribute("Interval", TimeValue(Time("0.00001")));
                     client.SetAttribute("PacketSize", UintegerValue(payloadSize));
-                    clientApplications = client.Install(clientNodes.Get(index));
-                    clientApplications.Start(Seconds(1.0));
-                    clientApplications.Stop(Seconds(simulationTime + 1));
+                    clientApplications.Add(client.Install(clientNodes.Get(index)));  // ← .Add()
                 }
+                clientApplications.Start(Seconds(1.0));   // ← moved outside loop
+                clientApplications.Stop(Seconds(simulationTime + 1));
             }
             else
             {

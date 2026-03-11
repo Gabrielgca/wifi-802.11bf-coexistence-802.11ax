@@ -1131,7 +1131,7 @@ StaWifiMac::StopCfPeriod()
 {
     NS_LOG_FUNCTION(this);
 
-    std::cout << "STA Stop CF by : " << GetAddress() << " " << Simulator::Now() << std::endl;
+    // std::cout << "STA Stop CF by : " << GetAddress() << " " << Simulator::Now() << std::endl;
 
 
     // Reset NAV immediately so EDCA can resume without
@@ -1151,10 +1151,10 @@ StaWifiMac::StopCfPeriod()
         for (uint8_t tid = 0; tid < 8; tid++)
         {
             auto txop = GetQosTxop(tid);
-            std::cout << "STA txop->GetAccessStatus(0U) : " << txop->GetAccessStatus(0U) << std::endl;
+            // std::cout << "STA txop->GetAccessStatus(0U) : " << txop->GetAccessStatus(0U) << std::endl;
             if (txop && txop->GetAccessStatus(0U) == Txop::GRANTED)
             {
-                // std::cout << "STA Notify Channel Released for PCF by : " << GetAddress() << " " << Simulator::Now() << std::endl;  
+                // // std::cout << "STA Notify Channel Released for PCF by : " << GetAddress() << " " << Simulator::Now() << std::endl;  
                 txop->NotifyChannelReleasedForPCF(0U);
             }
         }
@@ -1188,7 +1188,7 @@ StaWifiMac::Receive(Ptr<const WifiMpdu> mpdu, uint8_t linkId)
 
         if (!cfParamOpt.has_value())
         {
-            std::cout << "NO CF PARAMETER" << std::endl;
+            // std::cout << "NO CF PARAMETER" << std::endl;
             return; // no CF parameter set in this beacon
         }
 
@@ -1196,9 +1196,8 @@ StaWifiMac::Receive(Ptr<const WifiMpdu> mpdu, uint8_t linkId)
         if (GetPcfSupported() && cfParameterSet.GetCFPCount() == 0)
         {
             // see section 9.3.2.2 802.11-1999
-            std::cout << "stations with address " << GetAddress() << " received beacon with CFPCount=0 at " << Simulator::Now().GetSeconds()
-                      << " seconds" << std::endl;
-            std::cout << "cfParameterSet.GetCFPMaxDurationUs() : " << cfParameterSet.GetCFPMaxDurationUs() << std::endl;
+            // std::cout << "stations with address " << GetAddress() << " received beacon with CFPCount=0 at " << Simulator::Now().GetSeconds()  << " seconds" << std::endl;
+            // std::cout << "cfParameterSet.GetCFPMaxDurationUs() : " << cfParameterSet.GetCFPMaxDurationUs() << std::endl;
 
             GetChannelAccessManager(linkId)->NotifyNavStartNow(
                 MicroSeconds(cfParameterSet.GetCFPMaxDurationUs()));
@@ -1227,22 +1226,23 @@ StaWifiMac::Receive(Ptr<const WifiMpdu> mpdu, uint8_t linkId)
     // Changes on recieve behavior
     if (hdr->IsCfPoll())
     {
-         std::cout << "STATION CF-Poll received" << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+         // std::cout << "STATION CF-Poll received" << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
         // assume the station always response to the poll
         if (GetPcfSupported() && !IsInCfp())
         {
             NS_LOG_DEBUG("CF-Poll received, starting CFP");
-            std::cout << "stations Start CF with address " << GetAddress() << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+            // std::cout << "stations Start CF with address " << GetAddress() << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
             StartCfPeriod();
             Simulator::Schedule(InfrastructureWifiMac::GetCfpMaxDuration(), &StaWifiMac::StopCfPeriod, this);
         }
+        return;
     }
     // ADD THIS immediately after the CF-Poll block:
     if (hdr->IsCfEnd())
     {
         // AP has terminated the Contention-Free Period.
         // Unfreeze EDCA so normal data communication resumes.
-        std::cout << "stations received CF-End frame at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+        // std::cout << "stations received CF-End frame at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
         if (GetPcfSupported() && IsInCfp())
         {
             NS_LOG_DEBUG("CF-End received, stopping CFP");
@@ -1253,7 +1253,7 @@ StaWifiMac::Receive(Ptr<const WifiMpdu> mpdu, uint8_t linkId)
     }
     if (hdr->IsData())
     {
-        std::cout << "STA received data frame at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+        // std::cout << "STA received data frame at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
         if (!IsAssociated())
         {
             NS_LOG_LOGIC("Received data frame while not associated: ignore");
@@ -1285,18 +1285,17 @@ StaWifiMac::Receive(Ptr<const WifiMpdu> mpdu, uint8_t linkId)
         }
         if (hdr->IsQosData())
         {
-            std::cout << "STA Received QoS data frame with TID " << +hdr->GetQosTid() << " from "
-                      << hdr->GetAddr2() << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+            // std::cout << "STA Received QoS data frame with TID " << +hdr->GetQosTid() << " from "<< hdr->GetAddr2() << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
             if (hdr->IsQosAmsdu())
             {
                 NS_ASSERT(apAddresses.count(mpdu->GetHeader().GetAddr3()) != 0);
-                std::cout << "STA Received A-MSDU frame from " << hdr->GetAddr2() << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+                // std::cout << "STA Received A-MSDU frame from " << hdr->GetAddr2() << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
                 DeaggregateAmsduAndForward(mpdu);
                 packet = nullptr;
             }
             else
             {
-                std::cout << "STA Received non-A-MSDU QoS data frame from " << hdr->GetAddr2() << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+                // std::cout << "STA Received non-A-MSDU QoS data frame from " << hdr->GetAddr2() << " at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
                 ForwardUp(packet, hdr->GetAddr3(), hdr->GetAddr1());
             }
         }

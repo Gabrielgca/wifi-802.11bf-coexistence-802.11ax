@@ -353,7 +353,7 @@ FrameExchangeManager::StartTransmission(Ptr<Txop> dcf, uint16_t allowedWidth)
     // Even though channel access is requested when the queue is not empty, at
     // the time channel access is granted the lifetime of the packet might be
     // expired and the queue might be empty.
-    std::cout << "FrameExchangeManager StartTransmission called for DCF" << std::endl;
+    // std::cout << "FrameExchangeManager StartTransmission called for DCF" << std::endl;
     queue->WipeAllExpiredMpdus();
 
     Ptr<WifiMpdu> mpdu = queue->Peek(m_linkId);
@@ -524,7 +524,7 @@ FrameExchangeManager::SendMpdu()
     Time txDuration = m_phy->CalculateTxDuration(GetPsduSize(m_mpdu, m_txParams.m_txVector),
                                                  m_txParams.m_txVector,
                                                  m_phy->GetPhyBand());
-    std::cout << "Sending " << m_mpdu->GetHeader() << " duration=" << txDuration.As(Time::US) << std::endl;
+    // std::cout << "Sending " << m_mpdu->GetHeader() << " duration=" << txDuration.As(Time::US) << std::endl;
     NS_ASSERT(m_txParams.m_acknowledgment);
 
     if (m_txParams.m_acknowledgment->method == WifiAcknowledgment::NONE)
@@ -1211,7 +1211,7 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
         NS_LOG_INFO(" ---------------------------------------------------------------");
         NS_LOG_INFO("|");
     }
-    std::cout << "FRAME EXCHANGE: Received frame at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
+    // // std::cout << "FRAME EXCHANGE: Received frame at " << Simulator::Now().GetSeconds() << " seconds" << std::endl;
     if (!perMpduStatus.empty())
     {
         // for A-MPDUs, we get here only once
@@ -1219,8 +1219,8 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
     }
 
     Mac48Address addr1 = psdu->GetAddr1();
-    std::cout << "FRAME EXCHANGE: Addr1=" << addr1 << std::endl;
-    std::cout << "FRAME EXCHANGE: Self=" << m_self << std::endl;
+    // // std::cout << "FRAME EXCHANGE: Addr1=" << addr1 << std::endl;
+    // // std::cout << "FRAME EXCHANGE: Self=" << m_self << std::endl;
     if (addr1.IsGroup() || addr1 == m_self)
     {
         // receive broadcast frames or frames addressed to us only
@@ -1229,7 +1229,7 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
             // if perMpduStatus is not empty (i.e., this MPDU is not included in an A-MPDU)
             // then it must contain a single value which must be true (i.e., the MPDU
             // has been correctly received)
-            std::cout << "FRAME EXCHANGE: Received single MPDU" << std::endl;
+            // // std::cout << "FRAME EXCHANGE: Received single MPDU" << std::endl;
             NS_ASSERT(perMpduStatus.empty() || (perMpduStatus.size() == 1 && perMpduStatus[0]));
             // Ack and CTS do not carry Addr2
             if (!psdu->GetHeader(0).IsAck() && !psdu->GetHeader(0).IsCts())
@@ -1238,12 +1238,12 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
                                                           rxSignalInfo,
                                                           txVector);
             }
-            std::cout << "FRAME EXCHANGE: " << psdu->GetHeader(0) << " SNR: " << 10.0 * std::log10(rxSignalInfo.snr) << std::endl;
+            // // std::cout << "FRAME EXCHANGE: " << psdu->GetHeader(0) << " SNR: " << 10.0 * std::log10(rxSignalInfo.snr) << std::endl;
             ReceiveMpdu(*(psdu->begin()), rxSignalInfo, txVector, perMpduStatus.empty());
         }
         else
         {
-            std::cout << "FRAME EXCHANGE: Received A-MPDU with " << psdu->GetNMpdus() << " MPDUs" << std::endl;
+            // // std::cout << "FRAME EXCHANGE: Received A-MPDU with " << psdu->GetNMpdus() << " MPDUs" << std::endl;
             EndReceiveAmpdu(psdu, rxSignalInfo, txVector, perMpduStatus);
         }
     }
@@ -1257,7 +1257,7 @@ FrameExchangeManager::Receive(Ptr<const WifiPsdu> psdu,
                 {
                     m_infMacSTAReceiveCallback(m_dcf);
                 }
-                // std::cout << Simulator::Now() << " || Promiscuous received : " << mpdu->GetHeader() << std::endl;
+                // // std::cout << Simulator::Now() << " || Promiscuous received : " << mpdu->GetHeader() << std::endl;
                 m_rxMiddle->Receive(mpdu, m_linkId);
             }
         }
@@ -1289,7 +1289,7 @@ FrameExchangeManager::UpdateNav(Ptr<const WifiPsdu> psdu, const WifiTxVector& tx
 {
     NS_LOG_FUNCTION(this << psdu << txVector);
 
-    std::cout << "FRAME EXCHANGE: Update NAV based on " << psdu->GetHeader(0) << std::endl;
+    // // std::cout << "FRAME EXCHANGE: Update NAV based on " << psdu->GetHeader(0) << std::endl;
     if (!psdu->HasNav())
     {
         return;
@@ -1312,7 +1312,7 @@ FrameExchangeManager::UpdateNav(Ptr<const WifiPsdu> psdu, const WifiTxVector& tx
     {
         m_navEnd = navEnd;
         NS_LOG_DEBUG("Updated NAV=" << m_navEnd);
-        std::cout << "FRAME EXCHANGE: Updated NAV=" << m_navEnd << std::endl;
+        // // std::cout << "FRAME EXCHANGE: Updated NAV=" << m_navEnd << std::endl;
         // A STA that used information from an RTS frame as the most recent basis to update
         // its NAV setting is permitted to reset its NAV if no PHY-RXSTART.indication
         // primitive is received from the PHY during a NAVTimeout period starting when the
@@ -1335,7 +1335,7 @@ FrameExchangeManager::UpdateNav(Ptr<const WifiPsdu> psdu, const WifiTxVector& tx
         }
     }
     NS_LOG_DEBUG("Current NAV=" << m_navEnd);
-    std::cout << "FRAME EXCHANGE: Current NAV=" << m_navEnd << std::endl;
+    // // std::cout << "FRAME EXCHANGE: Current NAV=" << m_navEnd << std::endl;
     m_channelAccessManager->NotifyNavStartNow(duration);
 }
 
@@ -1447,7 +1447,7 @@ FrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                                     txVector,
                                     rxSnr);
         }
-        // std::cout << Simulator::Now() << " || Received : " << hdr << std::endl;
+        // // std::cout << Simulator::Now() << " || Received : " << hdr << std::endl;
         m_rxMiddle->Receive(mpdu, m_linkId);
     }
     else if (hdr.IsData() && !hdr.IsQosData())
@@ -1463,7 +1463,7 @@ FrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                                 txVector,
                                 rxSnr);
         }
-        // std::cout << Simulator::Now() << " || 2 Received : " << hdr << std::endl;
+        // // std::cout << Simulator::Now() << " || 2 Received : " << hdr << std::endl;
         m_rxMiddle->Receive(mpdu, m_linkId);
     }
 }

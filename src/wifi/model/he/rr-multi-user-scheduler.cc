@@ -189,11 +189,40 @@ RrMultiUserScheduler::SelectTxFormat()
     Ptr<const WifiMpdu> mpdu = m_edca->PeekNextMpdu(m_linkId);
     if (mpdu)
     {
-        std::cout << "mpdu" << mpdu->GetPacket() << std::endl;
-        std::cout << "rr-multi-user-scheduler SelectTxFormat: next MPDU for link " << +m_linkId << " header: " << mpdu->GetHeader() << std::endl;
+        // std::cout << "mpdu" << mpdu->GetPacket() << std::endl;
+        // std::cout << "rr-multi-user-scheduler SelectTxFormat: next MPDU for link " << +m_linkId << " header: " << mpdu->GetHeader() << std::endl;
     }
     else {
-        std::cout << "rr-multi-user-scheduler SelectTxFormat: no MPDU for link " << +m_linkId << std::endl;
+        // std::cout << "rr-multi-user-scheduler SelectTxFormat: no MPDU for link " << +m_linkId << std::endl;
+    }
+
+    if (m_apMac->IsInCfp())
+    {
+        if (mpdu)
+        {
+            const WifiMacHeader& hdr = mpdu->GetHeader();
+            bool isSensingFrame = hdr.IsCfPoll()           // WIFI_MAC_QOSDATA_CFPOLL
+                            || hdr.IsTrigger()        // WIFI_MAC_CTL_TRIGGER
+                            || hdr.IsCts()               // WIFI_MAC_CTS
+                            || hdr.IsNdpa()              // WIFI_MAC_CTL_NDPA
+                            || hdr.IsData() && !hdr.HasData()  // WIFI_MAC_DATA_NULL
+                            || hdr.IsActionNoAck()       // WIFI_MGT_NO_ACK (BFRP)
+                            || hdr.IsAction();           // WIFI_MGT_ACTION (BFRP report)
+
+            if (!isSensingFrame)
+            {
+                NS_LOG_DEBUG("CFP active: blocking non-sensing frame " 
+                            << hdr.GetTypeString());
+                // std::cout << "CFP active: blocking non-sensing frame " 
+                //             << hdr.GetTypeString() << std::endl;
+                return NO_TX;
+            }
+        }
+        else
+        {
+            // No sensing frame ready, nothing to send during CFP
+            return NO_TX;
+        }
     }
     // if (mpdu)
     if (IsPCFEnabled() && m_enableMuMimo)
@@ -216,13 +245,13 @@ RrMultiUserScheduler::SelectTxFormat()
                         if (m_nextSUSounding)
                         {
                             TxFormat txFormat = TryNDPASoundingPhase11bf();
-                            std::cout << "txFormat returned by TryNDPASoundingPhase11bf() : " << txFormat << std::endl;
+                            // std::cout << "txFormat returned by TryNDPASoundingPhase11bf() : " << txFormat << std::endl;
                             return txFormat;
                         }
                         else
                         {
                             TxFormat txFormat = TryPollingPhase11bf();
-                            std::cout << "txFormat returned by TryPollingPhase11bf() : " << txFormat << std::endl;
+                            // std::cout << "txFormat returned by TryPollingPhase11bf() : " << txFormat << std::endl;
                             return txFormat;
                         }
                     }
@@ -230,19 +259,19 @@ RrMultiUserScheduler::SelectTxFormat()
                 else if (GetLastTxFormat(0U) == BF_POLL_DL_TX)
                 {
                     TxFormat txFormat = TryNDPASoundingPhase11bf();
-                    std::cout << "txFormat returned by TryNDPASoundingPhase11bf() : " << txFormat << std::endl;
+                    // std::cout << "txFormat returned by TryNDPASoundingPhase11bf() : " << txFormat << std::endl;
                     return txFormat;
                 }
             }
             TxFormat txFormat = TryPollingPhase11bf();
-            std::cout << "txFormat returned by TryPollingPhase11bf() : " << txFormat << std::endl;
+            // std::cout << "txFormat returned by TryPollingPhase11bf() : " << txFormat << std::endl;
             return txFormat;
         }
     }
 
     if (mpdu && !m_apMac->GetHeSupported(mpdu->GetHeader().GetAddr1()))
     {
-        std::cout << "Next MPDU is for a non-HE station, sending SU_TX SU PPDU" << std::endl;
+        // std::cout << "Next MPDU is for a non-HE station, sending SU_TX SU PPDU" << std::endl;
         return SU_TX;
     }
 
@@ -250,7 +279,7 @@ RrMultiUserScheduler::SelectTxFormat()
     {
         TxFormat txFormat = TrySendingBsrpTf();
 
-        std::cout << "txFormat returned by TrySendingBsrpTf() : " << txFormat << std::endl;
+        // std::cout << "txFormat returned by TrySendingBsrpTf() : " << txFormat << std::endl;
 
         if (txFormat != DL_MU_TX)
         {
@@ -267,7 +296,7 @@ RrMultiUserScheduler::SelectTxFormat()
             return txFormat;
         }
     }
-    std::cout << "TrySendingDlMuPpdu because no other TxFormat was selected" << std::endl;
+    // std::cout << "TrySendingDlMuPpdu because no other TxFormat was selected" << std::endl;
     return TrySendingDlMuPpdu();
 }
 
@@ -354,7 +383,7 @@ RrMultiUserScheduler::GetTxVectorForUlMu(Func canBeSolicited)
 
         // prepare the MAC header of a frame that would be sent to the candidate station,
         // just for the purpose of retrieving the TXVECTOR used to transmit to that station
-        std::cout << "GetTxVectorForUlMu: candidate station "                   << std::endl;
+        // std::cout << "GetTxVectorForUlMu: candidate station "                   << std::endl;
         WifiMacHeader hdr(WIFI_MAC_QOSDATA);
         hdr.SetAddr1(GetWifiRemoteStationManager(m_linkId)
                          ->GetAffiliatedStaAddress(staIt->address)
@@ -407,7 +436,7 @@ RrMultiUserScheduler::TrySendingBsrpTf()
 
     m_trigger = CtrlTriggerHeader(TriggerFrameType::BSRP_TRIGGER, txVector);
     txVector.SetGuardInterval(m_trigger.GetGuardInterval());
-    std::cout << "TrySendingBsrpTf: selected stations for BSRP Trigger Frame: " << std::endl;
+    // std::cout << "TrySendingBsrpTf: selected stations for BSRP Trigger Frame: " << std::endl;
     auto item = GetTriggerFrame(m_trigger, m_linkId);
     m_triggerMacHdr = item->GetHeader();
 
@@ -525,7 +554,7 @@ RrMultiUserScheduler::TrySendingBasicTf()
 
     m_trigger = CtrlTriggerHeader(TriggerFrameType::BASIC_TRIGGER, txVector);
     txVector.SetGuardInterval(m_trigger.GetGuardInterval());
-    std::cout << "TrySendingBasicTf: selected stations for BASIC Trigger Frame: " << std::endl;
+    // std::cout << "TrySendingBasicTf: selected stations for BASIC Trigger Frame: " << std::endl;
     auto item = GetTriggerFrame(m_trigger, m_linkId);
     m_triggerMacHdr = item->GetHeader();
 
@@ -785,6 +814,10 @@ RrMultiUserScheduler::TrySendingDlMuPpdu()
             NS_ASSERT(ac >= primaryAc);
             // check that a BA agreement is established with the receiver for the
             // considered TID, since ack sequences for DL MU PPDUs require block ack
+        //     std::cout << "Checking STA " << staIt->address 
+        //   << " BA established: " 
+        //   << m_apMac->GetBaAgreementEstablishedAsOriginator(staIt->address, tid).has_value()
+        //   << std::endl;
             if (m_apMac->GetBaAgreementEstablishedAsOriginator(staIt->address, tid))
             {
                 mpdu = m_apMac->GetQosTxop(ac)->PeekNextMpdu(m_linkId, tid, staIt->address);
@@ -835,6 +868,24 @@ RrMultiUserScheduler::TrySendingDlMuPpdu()
                 else
                 {
                     NS_LOG_DEBUG("No frames to send to " << staIt->address << " with TID=" << +tid);
+                }
+            }
+            else
+            {
+                // No BA agreement established yet for this station.
+                // Check if it has frames waiting — if so, fall back to SU_TX
+                // so HtFrameExchangeManager can trigger the ADDBA handshake.
+                AcIndex ac = QosUtilsMapTidToAc(tid);
+                mpdu = m_apMac->GetQosTxop(ac)->PeekNextMpdu(m_linkId, tid, staIt->address);
+                if (mpdu && m_candidates.empty())
+                {
+                    // Move this station to end of list so next SU_TX call
+                    // starts fresh and rotates to other stations afterwards
+                    m_staListDl[primaryAc].splice(m_staListDl[primaryAc].end(),
+                                                m_staListDl[primaryAc],
+                                                staIt);
+                    NS_LOG_DEBUG("No BA for " << staIt->address << ", falling back to SU_TX for ADDBA");
+                    return SU_TX;
                 }
             }
         }
@@ -1185,7 +1236,10 @@ RrMultiUserScheduler::TryChannelSounding(void)
         {
             AcIndex ac = QosUtilsMapTidToAc(tid);
             NS_ASSERT(ac >= primaryAc);
-
+        //    std::cout << "Checking STA " << staIt->address 
+        //   << " BA established: " 
+        //   << m_apMac->GetBaAgreementEstablishedAsOriginator(staIt->address, tid).has_value()
+        //   << std::endl;
             if (m_apMac->GetBaAgreementEstablishedAsOriginator(staIt->address, tid))
             {
                 Ptr<WifiMpdu> mpdu =
@@ -1302,7 +1356,7 @@ RrMultiUserScheduler::TryChannelSounding(void)
                              1});
                         bfTfCtrlHeader =
                             CtrlTriggerHeader(TriggerFrameType::BFRP_TRIGGER, txVector);
-                        std::cout << "TryChannelSounding: selected stations for BFRP Trigger Frame: " << std::endl;
+                        // std::cout << "TryChannelSounding: selected stations for BFRP Trigger Frame: " << std::endl;
                         mpduTf = GetTriggerFrame(bfTfCtrlHeader, m_linkId);
                         txParamsSendTf = txParamsCtrlFrame;
                         if (!GetHeFem(m_linkId)->TryAddMpdu(mpduTf,
@@ -1326,7 +1380,7 @@ RrMultiUserScheduler::TryChannelSounding(void)
                     if (m_candidatesCs.size() == 0)
                     {
                         type = HeMimoControlHeader::SU;
-                        std::cout << "STA  is the only candidate for channel sounding, using SU feedback" << std::endl;
+                        // std::cout << "STA  is the only candidate for channel sounding, using SU feedback" << std::endl;
                         WifiMacHeader hdr(WIFI_MAC_QOSDATA);
                         hdr.SetAddr1(m_apMac->GetAddress());
                         hdr.SetAddr2(staIt->address);
@@ -1882,7 +1936,7 @@ RrMultiUserScheduler::TryPollingPhase11bf()
     }
     else
     {
-        std::cout << "No station can be scheduled in the polling phase, performing sensing timeout" << std::endl;
+        // std::cout << "No station can be scheduled in the polling phase, performing sensing timeout" << std::endl;
         SensingTimeout();
         return NO_TX;
     }
@@ -2261,7 +2315,7 @@ RrMultiUserScheduler::TryNDPASoundingPhase11bf(void)
         if (m_candidatesCs.size() == 0 || m_candidatesCs.size() == 1)
         {
             type = HeMimoControlHeader::SU;
-            std::cout << "SU Sounding Station:" << std::endl;
+            // std::cout << "SU Sounding Station:" << std::endl;
             WifiMacHeader hdr(WIFI_MAC_QOSDATA);
             hdr.SetAddr1(m_apMac->GetAddress());
             hdr.SetAddr2(staIt->first->address);
