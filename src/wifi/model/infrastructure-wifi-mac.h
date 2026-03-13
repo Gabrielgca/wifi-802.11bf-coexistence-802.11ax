@@ -184,7 +184,7 @@ class InfrastructureWifiMac : public WifiMac
         // Set in StartCfPeriod(), cleared in StopCfPeriod().
     bool m_inCfp;
 
-    // Safety-timeout event: fires EndSensing() if sensing never completes cleanly.
+    // Safety-timeout event: fires EndSensingMeasurementExchange() if sensing never completes cleanly.
     EventId m_cfpTimeoutEvent;
 
   protected:

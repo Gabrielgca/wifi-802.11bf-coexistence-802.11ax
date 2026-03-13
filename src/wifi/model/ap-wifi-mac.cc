@@ -1555,7 +1555,7 @@ ApWifiMac::SendOneBeacon(uint8_t linkId)
             }
             Simulator::Schedule(GetSensingInterval(), &ApWifiMac::SendOneBeacon, this, 0U);
             // Simulator::Schedule(GetCfpMaxDuration()/2 - GetWifiPhy(0U)->GetPifs(),
-            //                     &ApWifiMac::EndSensing,
+            //                     &ApWifiMac::EndSensingMeasurementExchange,
             //                     this,
             //                     0U);
         }
@@ -1631,17 +1631,17 @@ ApWifiMac::TxOk(Ptr<const WifiMpdu> mpdu)
             ApplyTidLinkMapping(*staMldAddress, WifiDirection::DOWNLINK);
         }
     }
-    else if (hdr.IsBeacon() && GetPcfSupported() && m_SensingAppBegin)
+    else if (hdr.IsBeacon() && GetPcfSupported() && m_SensingAppBegin && !m_inCfp)
     {
-        // std::cout << "TXOK for beacon from : " << GetAddress() << " " << Simulator::Now() << std::endl;
+        std::cout << "TXOK for beacon from : " << GetAddress() << " " << Simulator::Now() << std::endl;
         StartCfPeriod();
-        Simulator::Schedule(GetWifiPhy()->GetSifs(), &ApWifiMac::StartSensing, this, 0U);
+        Simulator::Schedule(GetWifiPhy()->GetSifs(), &ApWifiMac::StartSensingMeasurementExchange, this, 0U);
     }
     else if (hdr.IsCfEnd())
     {
         NS_LOG_DEBUG("CF-End TxOk — stopping CFP");
         // std::cout << "Stop CF TxOk from : " << GetAddress() << " " << Simulator::Now() << std::endl;
-        StopCfPeriod();
+        // StopCfPeriod();
     }
     else if (hdr.IsCfPoll())
     {
@@ -1824,7 +1824,7 @@ ApWifiMac::TxFailed(WifiMacDropReason timeoutReason, Ptr<const WifiMpdu> mpdu)
             packet->AddHeader(beacon);
 
             GetQosTxop(AcIndex(m_SensingPriority))->UpdateFailedCw(0U);
-            // std::cout << "TX failed for beacon from : " << GetAddress() << " " << Simulator::Now() << std::endl;
+            std::cout << "TX failed for beacon from : " << GetAddress() << " " << Simulator::Now() << std::endl;
             StartCfPeriod();
             GetQosTxop(AcIndex(m_SensingPriority))
                 ->SetTxOkCallback(MakeCallback(&ApWifiMac::TxOk, this));
@@ -1963,7 +1963,7 @@ ApWifiMac::Receive(Ptr<const WifiMpdu> mpdu, uint8_t linkId)
         //         MicroSeconds(cfParameterSet.GetCFPMaxDurationUs()));
         // }
         // Simulator::Schedule(MicroSeconds(cfParameterSet.GetCFPMaxDurationUs()),
-        //                     &ApWifiMac::EndSensing,
+        //                     &ApWifiMac::EndSensingMeasurementExchange,
         //                     this, linkId);
     }
     // std::cout << "MPDU received from " << from << " on link " << +linkId << " at " << Simulator::Now() << std::endl;
@@ -2851,12 +2851,12 @@ ApWifiMac::SendNextCfFrame(uint8_t linkId)
     if (remaining.IsStrictlyPositive() && !m_cfPollingList.empty())
     {
         // There is time left and there are STAs to poll: send next CF-Poll.
-        StartSensing(linkId);
+        StartSensingMeasurementExchange(linkId);
     }
     else
     {
         // Time is up or no more STAs — end the CFP.
-        EndSensing(linkId);
+        EndSensingMeasurementExchange(linkId);
     }
 }
 
@@ -2891,7 +2891,7 @@ ApWifiMac::StartCfPeriod()   // was StartCfPeriod(void) — keep signature consi
     NS_LOG_FUNCTION(this);
     NS_ASSERT(GetPcfSupported());
 
-    // std::cout << "AP Start CF : " << GetAddress() << " " << Simulator::Now() << std::endl;
+    // std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ AP Starts CF : " << GetAddress() << " " << Simulator::Now() << std::endl;
     // std::cout << "BEFORE StartCfPeriod IsInCfp() : " << IsInCfp() << std::endl;
     m_inCfp = true;
 
@@ -2910,14 +2910,10 @@ ApWifiMac::StopCfPeriod()
 {
     NS_LOG_FUNCTION(this);
 
-    // std::cout << "AP Stop CF by : " << GetAddress() << " " << Simulator::Now() << std::endl;
-
+    
     // Let InfrastructureWifiMac unfreeze EDCA via ChannelAccessManager.
     InfrastructureWifiMac::StopCfPeriod();
-
-    // Cancel any pending CFP timeout event and end the CFP immediately.
-    EndSensing(0U);
-
+    
     // Reset NAV immediately so EDCA can resume without
     // waiting for the full CfpMaxDuration to expire.
     // The CF-End frame itself signals that the channel
@@ -2926,7 +2922,7 @@ ApWifiMac::StopCfPeriod()
     {
         GetChannelAccessManager(linkId)->NotifyNavResetNow(Seconds(0));
     }
-
+    
     if (GetQosSupported())
     {
         GetQosTxop(AcIndex(m_SensingPriority))->EndTxNoAck(0U);
@@ -2935,7 +2931,7 @@ ApWifiMac::StopCfPeriod()
     {
         m_txop->EndTxNoAck(0U);
     }
-
+    
     if (GetPcfSupported())
     {
         if (GetQosSupported())
@@ -2948,21 +2944,25 @@ ApWifiMac::StopCfPeriod()
             m_txop->NotifyChannelReleasedForPCF(0U);
         }
     }
-
-
+    
+    
     m_inCfp = false;
+    // // Cancel any pending CFP timeout event and end the CFP immediately.
+    EndSensingMeasurementExchange(0U);
     m_cfpTimeoutEvent.Cancel();
-
+    
+    // std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ AP Stops CF by : " << GetAddress() << " " << Simulator::Now() << " number of SMEs : " << m_SMECounter << std::endl;
+    m_SMECounter = 0;
     NS_LOG_DEBUG("CFP ended");
 }
 
 
 void
-ApWifiMac::StartSensing(uint8_t linkId)
+ApWifiMac::StartSensingMeasurementExchange(uint8_t linkId)
 {
     NS_LOG_FUNCTION(this);
     NS_ASSERT(GetPcfSupported() && !m_cfPollingList.empty());
-    std::cout << "####################### Start sensing by : " << GetAddress() << " " << Simulator::Now() << std::endl; 
+    std::cout << "####################### Start Sensing Measurement Exchange by : " << GetAddress() << " " << Simulator::Now() << std::endl; 
     // Build and queue a QoS CF-Poll addressed to the current STA.
     Mac48Address pollTarget = *m_itCfPollingList;
 
@@ -2997,13 +2997,13 @@ ApWifiMac::StartSensing(uint8_t linkId)
 
     // std::cout << "GetCfpMaxDuration : " << GetCfpMaxDuration() << std::endl;
     m_cfpTimeoutEvent.Cancel();
-    Simulator::Schedule(GetCfpMaxDuration(), &ApWifiMac::EndSensing, this, 0U);
-
+    // Simulator::Schedule(GetCfpMaxDuration(), &ApWifiMac::EndSensingMeasurementExchange, this, 0U);
+    m_SMECounter++;
     NS_LOG_DEBUG("CF-Poll queued for " << pollTarget);
 }
 
 // void
-// ApWifiMac::StartSensing(uint8_t linkId)
+// ApWifiMac::StartSensingMeasurementExchange(uint8_t linkId)
 // {
 //     NS_LOG_FUNCTION(this);
 //     NS_ASSERT(GetPcfSupported() && GetQosSupported());
@@ -3056,25 +3056,21 @@ ApWifiMac::SensingRetransmission(uint8_t linkId)
         GetQosTxop(AcIndex(m_SensingPriority))
             ->NotifyChannelReleasedForPCF(linkId);
         // std::cout << "Current Remaining CFP is : " << InfrastructureWifiMac::GetRemainingCfpDuration() << std::endl;   
-        // Simulator::Schedule(InfrastructureWifiMac::GetRemainingCfpDuration(), &ApWifiMac::EndSensing, this, 0U);
+        // Simulator::Schedule(InfrastructureWifiMac::GetRemainingCfpDuration(), &ApWifiMac::EndSensingMeasurementExchange, this, 0U);
         // std::cout << "Maximum CFP is not enough! Releasing Channel Access: " << GetAddress() << " " << Simulator::Now() << std::endl;
         return;
     }
 }
 
 void
-ApWifiMac::EndSensing(uint8_t linkId)
+ApWifiMac::EndSensingMeasurementExchange(uint8_t linkId)
 {
     NS_LOG_FUNCTION(this);
     NS_ASSERT(GetPcfSupported());
 
-    if (!m_inCfp)
-    {
-        // Already stopped (e.g. called twice due to race), ignore.
-        return;
-    }
 
-    std::cout << "####################### End sensing by : " << GetAddress() << " " << Simulator::Now() << std::endl;
+
+    std::cout << "####################### End Sensing Measurement Exchange by : " << GetAddress() << " " << Simulator::Now() << std::endl;
     // Drain any leftover CF-Poll from the sensing queue.
     Ptr<WifiMpdu> lastMpdu =
         GetQosTxop(AcIndex(m_SensingPriority))->PeekNextMpdu(linkId);
@@ -3084,7 +3080,12 @@ ApWifiMac::EndSensing(uint8_t linkId)
             ->GetWifiMacQueue()->DequeueIfQueued({lastMpdu});
     }
 
-
+    if (m_inCfp)
+    {
+        std::cout << "Sensing round complete at " << Simulator::Now() << ", scheduling next round" << std::endl;
+        Simulator::ScheduleNow( &ApWifiMac::StartSensingMeasurementExchange, this, linkId);  
+    }         
+    
     // WifiMacHeader cfEndHdr;
     // cfEndHdr.SetType(WIFI_MAC_CTL_END);
     // cfEndHdr.SetDsNotFrom();
@@ -3159,7 +3160,7 @@ ApWifiMac::EndSensing(uint8_t linkId)
 // }
 
 // void
-// ApWifiMac::EndSensing(uint8_t linkId)
+// ApWifiMac::EndSensingMeasurementExchange(uint8_t linkId)
 // {
 //     NS_LOG_FUNCTION(this);
 //     NS_ASSERT(GetPcfSupported());

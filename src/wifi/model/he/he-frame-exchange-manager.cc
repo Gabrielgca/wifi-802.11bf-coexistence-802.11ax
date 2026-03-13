@@ -2742,6 +2742,7 @@ HeFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                     //Reporting phase
                     else
                     {
+                        // std::cout << "Receive CSI from all stations. Channel sounding process ends." << std::endl;
                         m_apMac->GetWifiPhy()->NotifyMonitorChannelAccess(GetAddress(),
                                                                           Simulator::Now(),
                                                                           true);
@@ -2751,7 +2752,7 @@ HeFrameExchangeManager::ReceiveMpdu(Ptr<const WifiMpdu> mpdu,
                         m_edca->NotifyChannelReleasedForPCF(0U);
                         // std::cout << "m_edca->GetQosQueueSize(m_linkId): " << static_cast<int>(m_edca->GetQosQueueSize(m_linkId, hdr.GetAddr2())) << std::endl;
                         ResetSensingTimeout();
-                        // m_apMac->EndSensing();
+                        m_apMac->EndSensingMeasurementExchange();
                         // std::cout << "Sensing successfully ended for " << GetAddress() << " at time " << Simulator::Now() << std::endl;
                         m_edca = nullptr;
                     }

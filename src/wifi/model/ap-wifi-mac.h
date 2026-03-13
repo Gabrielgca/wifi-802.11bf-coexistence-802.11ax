@@ -256,11 +256,11 @@ class ApWifiMac : public InfrastructureWifiMac
     /**
      * Send a CF-Poll packet to the next polling STA.
      */
-    void StartSensing(uint8_t linkId = 0U);
+    void StartSensingMeasurementExchange(uint8_t linkId = 0U);
     /**
      * Send a CF-End packet.
      */
-    void EndSensing(uint8_t linkId = 0U);
+    void EndSensingMeasurementExchange(uint8_t linkId = 0U);
     /**
      * Send a CF-End packet.
      */
@@ -663,8 +663,9 @@ class ApWifiMac : public InfrastructureWifiMac
     bool m_SensingAppBegin = false; //!< Flag to indicate that the sensing application has started
     bool m_waitingCSIReport = false; //!< Flag to indicate that the AP is waiting for a CSI report
 
+    u_int16_t m_SMECounter = 0; //!< Counter of the number of sensing measurement exchange attempts for the current sensing window
 
-    // Safety-timeout event: fires EndSensing() if sensing never completes cleanly.
+    // Safety-timeout event: fires EndSensingMeasurementExchange() if sensing never completes cleanly.
     EventId m_cfpTimeoutEvent;
     Time m_sensingInterval;              //!< Rate of sensing in the simulation
     /// store value and timestamp for each Buffer Status Report
